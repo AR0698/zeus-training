@@ -52,8 +52,10 @@
   background: var(--text);
   color: var(--bg);
 }
+/* Lightened just enough to read as hover, not enough to drop the label below
+   4.5:1 — which a straight switch to --text-2 would have done. */
 .button-solid:hover {
-  background: var(--text-2);
+  background: color-mix(in oklab, var(--text) 85%, var(--bg));
 }
 
 .button-ghost {

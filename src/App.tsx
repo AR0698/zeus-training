@@ -51,7 +51,9 @@ export function App() {
 
   const { toast, show, dismiss } = useToaster();
   const haptics = useHaptics(state.settings.vibration);
-  const now = useNow(state.session !== null);
+  // One clock for the whole app: to the second during a session, to the minute
+  // otherwise. No screen ever calls Date.now() while rendering.
+  const now = useNow(true, state.session === null ? 60_000 : 1000);
 
   useTheme(state.settings.theme);
   useWakeLock(state.settings.keepAwake && state.session !== null);
@@ -168,7 +170,7 @@ export function App() {
 
   const editedProgram = state.programs.find((program) => program.id === editProgramId) ?? null;
   const staleSession =
-    state.session !== null && !staleDismissed && isSessionStale(state.session, Date.now());
+    state.session !== null && !staleDismissed && isSessionStale(state.session, now);
 
   if (status === "loading") {
     return (
@@ -276,7 +278,7 @@ export function App() {
         {tab === "today" && (
           <TodayScreen
             state={state}
-            now={Date.now()}
+            now={now}
             onStart={startSession}
             onOpenDetail={setDetail}
             onOpenPrograms={() => setTab("programs")}
@@ -290,7 +292,7 @@ export function App() {
             onOpenDetail={setDetail}
           />
         )}
-        {tab === "progress" && <ProgressScreen state={state} now={Date.now()} />}
+        {tab === "progress" && <ProgressScreen state={state} now={now} />}
         {tab === "settings" && (
           <SettingsScreen
             state={state}
