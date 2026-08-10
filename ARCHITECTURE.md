@@ -7,16 +7,18 @@ Ce document explique **pourquoi** le code est découpé ainsi. Chaque règle ci-
 ## 1. Le principe directeur : une seule direction de dépendance
 
 ```
-domain/      ← fonctions pures : règles de progression, calculs, formatage
+domain/catalog/  ← données : les 123 mouvements, seule source de vérité
    ↑
-state/       ← un reducer, des actions nommées, validation et migration
+domain/          ← fonctions pures : progression, recherche, rappels, calculs
    ↑
-storage/     ← IndexedDB, export/import (le seul I/O)
+state/           ← un reducer, des actions nommées, validation et migration
    ↑
-ui/          ← React : ne calcule rien, affiche et dispatche
+storage/         ← IndexedDB, export/import (le seul I/O)
+   ↑
+ui/              ← React : ne calcule rien, affiche et dispatche
 ```
 
-Rien ne pointe vers le bas. `domain/` ignore l'existence de React, du navigateur, du stockage et même de l'horloge. C'est ce qui rend les règles d'entraînement testables sans navigateur, et c'est pourquoi 47 tests tournent en moins de 200 ms.
+Rien ne pointe vers le bas. `domain/` ignore l'existence de React, du navigateur, du stockage et même de l'horloge. C'est ce qui rend les règles d'entraînement testables sans navigateur, et c'est pourquoi 82 tests tournent en moins de 200 ms — y compris ceux du rappel mensuel, qui n'attendent pas un mois.
 
 **Bug empêché :** une règle métier qui change de comportement selon l'écran où elle est appelée.
 
@@ -110,18 +112,41 @@ C'est une correction directe de la version précédente, qui affichait « 3 séa
 
 ---
 
-## Pièges connus
+## 9. Le catalogue est une donnée, pas du code dispersé
 
-| Sujet | État |
-| --- | --- |
-| Multi-appareils | non supporté par construction : une seule copie locale, export manuel |
-| Deux onglets ouverts en parallèle | le dernier qui écrit gagne ; pas de fusion |
-| Polices Google | mises en cache par le service worker après la première visite ; sans réseau au tout premier chargement, l'app tombe sur les polices système |
-| Programmes | entièrement éditables ; la seule limite est qu'un exercice ne peut pas être déplacé d'une séance à une autre (le dupliquer puis le retirer revient au même) |
-| RPE / RIR, supersets, échauffements | non modélisés ; les supersets bras existent comme deux exercices consécutifs |
-| Historique | plafonné à 400 séances (~2 ans à 4 séances/semaine) |
+`domain/catalog/` contient les 123 mouvements, découpés par muscle (`chest`, `back`, `shoulders`, `arms`, `legs`, `core`) et construits par une seule fabrique, `entry()`. Les séances d'exemple de `domain/seed.ts` **n'écrivent aucun exercice** : elles citent des identifiants et reçoivent une copie de la fiche. Un test échoue si l'un de ces identifiants disparaît du catalogue.
 
-## 9. L'éditeur ne peut pas produire un état invalide
+Deux champs n'existent que dans le catalogue et ne sont jamais persistés : `equipment` et `haystack`. Les mettre dans `ExerciseTemplate` aurait imposé une migration de schéma pour une donnée que personne ne modifie, et aurait figé dans les sauvegardes un index de recherche qui doit pouvoir changer à chaque version.
+
+`normalise()` vit dans `domain/text.ts` parce que la chaîne indexée à la construction et la requête tapée dans le champ doivent passer par la **même** fonction : deux implémentations qui divergent d'un accent produisent une recherche qui ne trouve rien, sans jamais lever d'erreur.
+
+**Bug empêché :** un mouvement présent dans une séance d'exemple mais introuvable dans le catalogue, donc impossible à remplacer ni à retrouver.
+
+---
+
+## 10. Personne n'hérite des données de quelqu'un d'autre
+
+`createInitialState()` ne charge **aucun** programme, et `onboardedAt` vaut `null` tant que l'écran de bienvenue n'a pas été validé. C'est ce qui rend l'application partageable : la version précédente livrait les quatre séances de son auteur à quiconque l'installait.
+
+La migration v1 → v2 déduit la réponse plutôt que de la redemander : un enregistrement qui contient déjà des séances ou de l'historique est marqué comme accueilli à sa date de création. Un enregistrement vide, lui, repose la question.
+
+`parsePrograms` distingue trois cas là où il n'en voyait que deux : tableau vide (choix délibéré, on n'y touche pas), champ **absent** (installation neuve — on ne remplit pas à la place de l'utilisateur), champ présent mais illisible (corruption — les exemples sont restaurés, avec un message).
+
+**Bug empêché :** une nouvelle personne qui s'entraîne sur le programme d'un autre en croyant que c'est le sien.
+
+---
+
+## 11. Le rappel de sauvegarde est une fonction pure
+
+`shouldPromptBackup(state, now)` ne lit pas l'horloge : elle la reçoit. Les quatre cas — jamais sauvegardé, exporté hier, reporté d'une semaine, rien à perdre — se testent donc sans attendre un mois.
+
+Deux détails qui n'en sont pas : un export efface le report en cours (sinon le rappel reviendrait dans les sept jours restants, juste après une sauvegarde), et le rappel ne s'affiche jamais en même temps que la feuille « séance oubliée » — deux `<dialog>` modaux s'empilent et le second devient inatteignable.
+
+**Bug empêché :** une application qui réclame une sauvegarde à quelqu'un qui vient d'en faire une, jusqu'à ce qu'il cesse de lire le message.
+
+---
+
+## 12. L'éditeur ne peut pas produire un état invalide
 
 Un éditeur ouvert à tous est le moyen le plus direct de fabriquer des données incohérentes : trois séries mais quatre charges, un maximum de répétitions sous le minimum, un nom vide, un programme sans exercice.
 
@@ -134,9 +159,25 @@ Deux conséquences voulues :
 
 `nextProgram()` renvoie `null` quand il ne reste aucune séance, au lieu de lever une exception : une bibliothèque vide est un écran à dessiner, pas un plantage.
 
+---
+
+## Pièges connus
+
+| Sujet | État |
+| --- | --- |
+| Multi-appareils | non supporté par construction : une seule copie locale, export manuel |
+| Retour d'avis | `mailto:` uniquement — sans serveur, l'envoi dépend d'un client mail configuré ; le bouton « copier » est le repli |
+| Liens de démonstration | vérifiés pour les 37 mouvements d'origine ; les nouveaux pointent vers une recherche vidéo, qui résout toujours, plutôt qu'un lien direct qui finira en 404 |
+| Deux onglets ouverts en parallèle | le dernier qui écrit gagne ; pas de fusion |
+| Polices Google | mises en cache par le service worker après la première visite ; sans réseau au tout premier chargement, l'app tombe sur les polices système |
+| Programmes | entièrement éditables ; la seule limite est qu'un exercice ne peut pas être déplacé d'une séance à une autre (le dupliquer puis le retirer revient au même) |
+| RPE / RIR, supersets, échauffements | non modélisés ; les supersets bras existent comme deux exercices consécutifs |
+| Historique | plafonné à 400 séances (~2 ans à 4 séances/semaine) |
+
 ## Ajouter une fonctionnalité sans casser le reste
 
 1. Si c'est une **règle** (progression, statistique, calcul) : l'écrire dans `domain/`, en fonction pure, avec un test. Ne pas la faire passer par React.
 2. Si c'est un **changement d'état** : ajouter une action dans `state/actions.ts` puis son cas dans le reducer. Le typecheck indiquera ce qui manque.
-3. Si ça **modifie la forme de `AppState`** : incrémenter `CURRENT_VERSION`, étendre `parseAppState` pour lire l'ancienne forme, ajouter un test de migration. Ne jamais supposer que le disque contient la forme actuelle.
-4. Si c'est **visuel** : utiliser les jetons de `styles/tokens.css`. Aucune valeur hexadécimale ni taille en dur dans un composant.
+3. Si ça **modifie la forme de `AppState`** : incrémenter `CURRENT_VERSION` (dans `domain/seed.ts`, à côté de la fabrique d'état neuf pour que les deux ne divergent pas), étendre `parseAppState` pour lire l'ancienne forme, ajouter un test de migration. Ne jamais supposer que le disque contient la forme actuelle.
+4. Si c'est un **mouvement** : l'ajouter dans le fichier de `domain/catalog/` correspondant à son muscle, avec trois équivalents. Les tests refusent une fiche sans consigne, sans conseil ou sans repli.
+5. Si c'est **visuel** : utiliser les jetons de `styles/tokens.css`. Aucune valeur hexadécimale ni taille en dur dans un composant.

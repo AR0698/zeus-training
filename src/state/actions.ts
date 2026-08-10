@@ -1,3 +1,4 @@
+import type { OnboardingChoice } from "../domain/onboarding.ts";
 import type { AppState, Effort, ExerciseTemplate, Program, Settings } from "../domain/types.ts";
 
 /**
@@ -10,6 +11,9 @@ export type Action =
   | { type: "state/replace"; state: AppState }
   | { type: "state/reset"; now: number }
   | { type: "settings/update"; patch: Partial<Settings> }
+  | { type: "onboarding/finish"; choice: OnboardingChoice }
+  | { type: "backup/exported"; now: number }
+  | { type: "backup/snooze"; now: number }
   | { type: "program/setTarget"; programId: string; exerciseId: string; setIndex: number; value: number }
   | { type: "program/adjustTarget"; programId: string; exerciseId: string; setIndex: number; delta: number }
   | { type: "program/create"; id: string }

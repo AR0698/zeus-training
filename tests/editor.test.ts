@@ -10,13 +10,19 @@ import {
   slugify,
   uniqueExerciseId,
 } from "../src/domain/library.ts";
-import { createInitialState } from "../src/domain/seed.ts";
+import { createInitialState, examplePrograms } from "../src/domain/seed.ts";
 import type { AppState, ExerciseTemplate } from "../src/domain/types.ts";
 import { reducer } from "../src/state/reducer.ts";
 import { parseAppState } from "../src/state/schema.ts";
 
 const NOW = Date.UTC(2026, 7, 10, 10, 0, 0);
-const base = () => createInitialState(NOW);
+
+/** L'état d'une personne installée : accueil passé, séances d'exemple chargées. */
+const base = (): AppState => ({
+  ...createInitialState(NOW),
+  onboardedAt: NOW,
+  programs: examplePrograms(),
+});
 const first = (state: AppState) => state.programs[0]!;
 
 test("every library entry is internally consistent", () => {

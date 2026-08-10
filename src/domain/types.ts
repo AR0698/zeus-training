@@ -128,6 +128,15 @@ export type AppState = {
   /** Persisted schema version. Bump it and add a migration, never mutate. */
   version: number;
   createdAt: number;
+  /**
+   * When the welcome screen was completed. `null` means a brand new install:
+   * nobody inherits someone else's programs, and the app asks first.
+   */
+  onboardedAt: number | null;
+  /** Last successful backup export. `null` means it never happened. */
+  lastBackupAt: number | null;
+  /** Last time the monthly backup reminder was shown and postponed. */
+  backupPromptedAt: number | null;
   programs: Program[];
   session: Session | null;
   history: HistoryEntry[];

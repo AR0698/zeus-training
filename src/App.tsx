@@ -5,7 +5,9 @@ import {
   slugify,
   uniqueExerciseId,
 } from "./domain/library.ts";
+import { markOnboarded, type StarterChoice } from "./domain/onboarding.ts";
 import { decideProgression } from "./domain/progression.ts";
+import { shouldPromptBackup } from "./domain/reminder.ts";
 import { isSessionStale } from "./domain/session.ts";
 import type {
   AppState,
@@ -14,12 +16,14 @@ import type {
   Program,
   SessionExercise,
 } from "./domain/types.ts";
+import { downloadBackup } from "./storage/backup.ts";
 import { useHaptics } from "./hooks/useHaptics.ts";
 import { useNow } from "./hooks/useNow.ts";
 import { useRestTimer } from "./hooks/useRestTimer.ts";
 import { useTheme } from "./hooks/useTheme.ts";
 import { useWakeLock } from "./hooks/useWakeLock.ts";
 import { useStore } from "./state/store.tsx";
+import { BackupReminderSheet } from "./ui/components/BackupReminderSheet.tsx";
 import { ExerciseSheet } from "./ui/components/ExerciseSheet.tsx";
 import { ReplaceSheet } from "./ui/components/ReplaceSheet.tsx";
 import { Sheet } from "./ui/components/Sheet.tsx";
@@ -30,7 +34,6 @@ import {
   IconHome,
   IconSettings,
   IconTrend,
-  IconUpload,
   IconWifiOff,
 } from "./ui/icons.tsx";
 import {
@@ -42,6 +45,7 @@ import { ProgressScreen } from "./ui/screens/ProgressScreen.tsx";
 import { SessionScreen, type SessionHandlers } from "./ui/screens/SessionScreen.tsx";
 import { SettingsScreen } from "./ui/screens/SettingsScreen.tsx";
 import { TodayScreen } from "./ui/screens/TodayScreen.tsx";
+import { WelcomeScreen } from "./ui/screens/WelcomeScreen.tsx";
 import { newId, type ExerciseDetail } from "./ui/types.ts";
 
 type Tab = "today" | "programs" | "progress" | "settings";
@@ -83,6 +87,40 @@ export function App() {
   const notify = useCallback(
     (message: string, tone: ToastTone = "neutral") => show({ message, tone }),
     [show],
+  );
+
+  // Un seul chemin d'export : le rappel mensuel et l'écran Réglages doivent
+  // enregistrer la même date, sinon le rappel se redéclencherait juste après
+  // une sauvegarde faite depuis l'autre bouton.
+  const exportBackup = useCallback(() => {
+    const at = Date.now();
+    downloadBackup(state, at);
+    dispatch({ type: "backup/exported", now: at });
+    show({ message: "Sauvegarde exportée — dépose-la sur Drive ou iCloud", tone: "success" });
+  }, [state, dispatch, show]);
+
+  const importState = useCallback(
+    (next: AppState, importIssues: string[]) => {
+      // Arriver avec une sauvegarde vaut réponse à l'écran de bienvenue.
+      dispatch({ type: "state/replace", state: markOnboarded(next, Date.now()) });
+      show({
+        message: `Sauvegarde importée — ${next.history.length} séance(s)`,
+        tone: "success",
+        action: { label: "Annuler", run: undo },
+      });
+      if (importIssues.length > 0) notify(importIssues[0] ?? "", "warn");
+      setTab("today");
+    },
+    [dispatch, show, notify, undo],
+  );
+
+  const startOnboarding = useCallback(
+    (starter: StarterChoice, displayName: string) => {
+      dispatch({ type: "onboarding/finish", choice: { now: Date.now(), starter, displayName } });
+      // Page blanche : la première chose à faire est de composer une séance.
+      setTab(starter === "blank" ? "programs" : "today");
+    },
+    [dispatch],
   );
 
   const startSession = useCallback(
@@ -255,6 +293,9 @@ export function App() {
 
   const staleSession =
     state.session !== null && !staleDismissed && isSessionStale(state.session, now);
+  // Deux feuilles modales ouvertes en même temps s'empilent : la séance oubliée
+  // est plus urgente, le rappel de sauvegarde attendra le prochain lancement.
+  const backupDue = !staleSession && shouldPromptBackup(state, now);
 
   if (status === "loading") {
     return (
@@ -262,6 +303,16 @@ export function App() {
         <span className="boot-mark">Z</span>
         <p>Chargement de tes données…</p>
       </div>
+    );
+  }
+
+  // Première ouverture : personne n'hérite des séances de quelqu'un d'autre.
+  if (state.onboardedAt === null) {
+    return (
+      <>
+        <WelcomeScreen onChoose={startOnboarding} onImport={importState} notify={notify} />
+        <Toaster toast={toast} onDismiss={dismiss} />
+      </>
     );
   }
 
@@ -354,21 +405,6 @@ export function App() {
           />
         )}
 
-        {!editedProgram && state.history.length === 0 && tab === "today" && (
-          <div className="banner banner-accent">
-            <IconUpload size={18} />
-            <div>
-              <p>
-                <strong>Tu as déjà un carnet ?</strong> Importe ta sauvegarde pour retrouver tes
-                charges et ton historique.
-              </p>
-              <button type="button" className="link-button" onClick={() => setTab("settings")}>
-                Aller dans Réglages → Importer
-              </button>
-            </div>
-          </div>
-        )}
-
         {!editedProgram && tab === "today" && (
           <TodayScreen
             state={state}
@@ -391,17 +427,10 @@ export function App() {
         {!editedProgram && tab === "settings" && (
           <SettingsScreen
             state={state}
+            now={now}
             onUpdate={(patch) => dispatch({ type: "settings/update", patch })}
-            onImport={(next: AppState, importIssues) => {
-              dispatch({ type: "state/replace", state: next });
-              show({
-                message: `Sauvegarde importée — ${next.history.length} séance(s)`,
-                tone: "success",
-                action: { label: "Annuler", run: undo },
-              });
-              if (importIssues.length > 0) notify(importIssues[0] ?? "", "warn");
-              setTab("today");
-            }}
+            onExport={exportBackup}
+            onImport={importState}
             onReset={() => {
               dispatch({ type: "state/reset", now: Date.now() });
               show({
@@ -474,6 +503,14 @@ export function App() {
           </button>
         </div>
       </Sheet>
+
+      <BackupReminderSheet
+        state={state}
+        open={backupDue}
+        now={now}
+        onExport={exportBackup}
+        onLater={() => dispatch({ type: "backup/snooze", now: Date.now() })}
+      />
 
       <Toaster toast={toast} onDismiss={dismiss} />
       {canUndo && <span className="visually-hidden">Une annulation est disponible</span>}

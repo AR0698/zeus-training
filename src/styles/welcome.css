@@ -1,0 +1,168 @@
+/* --------------------------------------------------------------------------
+   Écran de bienvenue.
+
+   Pas de barre d'onglets, pas de navigation : un seul choix à faire, dans
+   l'ordre de lecture. La colonne est bornée à la largeur de lecture parce que
+   le paragraphe sur le stockage local doit vraiment être lu.
+   -------------------------------------------------------------------------- */
+.welcome {
+  min-height: 100dvh;
+  padding: calc(var(--safe-top) + var(--space-10)) var(--space-5)
+    calc(var(--safe-bottom) + var(--space-10));
+  max-width: 34rem;
+  margin: 0 auto;
+  display: grid;
+  align-content: start;
+  gap: var(--space-6);
+}
+
+.welcome-head {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+}
+
+.welcome-head .brand-mark {
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: var(--text-xl);
+}
+
+.welcome-head h1 {
+  font-size: var(--text-4xl);
+}
+
+.welcome-head b {
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+.welcome-privacy {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+  border-color: var(--line-strong);
+}
+
+.welcome-privacy p {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-2);
+  margin-top: var(--space-2);
+}
+
+.welcome-privacy strong {
+  color: var(--text);
+}
+
+.welcome-privacy-icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+/* Le paragraphe ci-dessus est déjà en --text-2 avec une spécificité plus forte :
+   la note se distingue par sa taille et son icône, pas par une couleur plus
+   pâle — c'est celle qui aurait été la plus près du seuil de contraste. */
+.welcome-privacy-note {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  font-size: var(--text-xs);
+}
+
+.welcome-privacy-note svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.welcome-question {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  letter-spacing: var(--tracking-tight);
+  margin-bottom: calc(-1 * var(--space-2));
+}
+
+.welcome-choices {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.welcome-choice {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+  width: 100%;
+  min-height: var(--tap-comfort);
+  padding: var(--space-4);
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  transition: border-color var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+}
+
+.welcome-choice:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-1px);
+}
+
+.welcome-choice.is-primary {
+  border-color: var(--accent-line);
+  box-shadow: var(--glow);
+}
+
+.welcome-choice > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.welcome-choice strong {
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+.welcome-choice small {
+  font-size: var(--text-xs);
+  color: var(--text-2);
+  line-height: var(--leading-snug);
+}
+
+.welcome-choice > svg:last-child {
+  flex: 0 0 auto;
+  color: var(--text-3);
+}
+
+.welcome-choice.is-primary > svg:last-child {
+  color: var(--accent-text);
+}
+
+.welcome-choice-icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+  color: var(--text-2);
+}
+
+.welcome-choice.is-primary .welcome-choice-icon {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-choice:hover {
+    transform: none;
+  }
+}

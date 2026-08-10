@@ -286,3 +286,33 @@ export const IconWifiOff = (props: IconProps) => (
     <path d="M12 19.5h.01" strokeWidth={2.5} />
   </Icon>
 );
+
+export const IconShare = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M12 3v12" />
+    <path d="M8 6.5 12 3l4 3.5" />
+    <path d="M5.5 12v7.5h13V12" />
+  </Icon>
+);
+
+export const IconMail = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="3" y="5" width="18" height="14" rx="2.5" />
+    <path d="m3.8 7 7.2 5.4a1.7 1.7 0 0 0 2 0L20.2 7" />
+  </Icon>
+);
+
+export const IconShield = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M12 3.2 5 6v5.6c0 4 2.8 7.6 7 9.2 4.2-1.6 7-5.2 7-9.2V6z" />
+    <path d="m9.2 12 2 2 3.6-3.8" />
+  </Icon>
+);
+
+export const IconFilter = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M4 6h16" />
+    <path d="M7 12h10" />
+    <path d="M10 18h4" />
+  </Icon>
+);

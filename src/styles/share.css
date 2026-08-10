@@ -1,0 +1,72 @@
+/* --------------------------------------------------------------------------
+   Partage, retour d'avis, et les quelques ajouts du catalogue étendu.
+   -------------------------------------------------------------------------- */
+
+/* L'adresse reste affichée en clair : `navigator.share` n'existe pas partout,
+   et le presse-papiers échoue en silence hors HTTPS. Il faut toujours pouvoir
+   la recopier à la main. Elle se coupe n'importe où plutôt que de déborder. */
+.share-url {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.share-help {
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+.share-help summary {
+  min-height: var(--tap-min);
+  display: flex;
+  align-items: center;
+  color: var(--accent-text);
+  cursor: pointer;
+}
+
+.share-help ol {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-5);
+  display: grid;
+  gap: var(--space-2);
+  line-height: var(--leading-normal);
+}
+
+.share-help strong {
+  color: var(--text);
+}
+
+.status-warn {
+  color: var(--warn-text);
+}
+
+/* Catalogue : la rangée de filtres matériel dépasse la largeur d'un téléphone,
+   elle défile horizontalement au lieu de passer sur trois lignes. */
+.chip-row-scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: var(--space-1);
+  scroll-padding-inline: var(--space-4);
+}
+
+.chip-row-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.chip-row-scroll .chip {
+  flex: 0 0 auto;
+}
+
+.picker-count {
+  margin-top: var(--space-4);
+  font-size: var(--text-xs);
+  color: var(--text-3);
+}

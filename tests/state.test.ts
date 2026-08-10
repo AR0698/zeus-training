@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createInitialState, SEED_PROGRAMS } from "../src/domain/seed.ts";
+import { createInitialState, examplePrograms, SEED_PROGRAMS } from "../src/domain/seed.ts";
 import { createSession } from "../src/domain/session.ts";
 import type { AppState } from "../src/domain/types.ts";
 import { reducer } from "../src/state/reducer.ts";
@@ -8,8 +8,13 @@ import { CURRENT_VERSION, parseAppState } from "../src/state/schema.ts";
 
 const NOW = Date.UTC(2026, 7, 10, 10, 0, 0);
 
+/** L'état d'une personne installée : accueil passé, séances d'exemple chargées. */
+function installed(): AppState {
+  return { ...createInitialState(NOW), onboardedAt: NOW, programs: examplePrograms() };
+}
+
 function started(): AppState {
-  const state = createInitialState(NOW);
+  const state = installed();
   return reducer(state, {
     type: "session/start",
     program: SEED_PROGRAMS[0]!,
@@ -91,7 +96,7 @@ test("only a complete session advances the Upper/Lower rotation", () => {
 });
 
 test("editing a program target is clamped and rounded", () => {
-  const state = createInitialState(NOW);
+  const state = installed();
   const next = reducer(state, {
     type: "program/setTarget",
     programId: "upper-a",
@@ -105,10 +110,19 @@ test("editing a program target is clamped and rounded", () => {
 test("parsing survives complete garbage", () => {
   for (const input of [null, 42, "nope", [], { random: true }]) {
     const parsed = parseAppState(input, NOW);
-    assert.equal(parsed.state.programs.length, SEED_PROGRAMS.length);
     assert.equal(parsed.state.version, CURRENT_VERSION);
     assert.equal(parsed.state.session, null);
+    // Une entrée illisible n'est pas une raison de servir les séances de
+    // quelqu'un d'autre : c'est l'écran de bienvenue qui posera la question.
+    assert.deepEqual(parsed.state.programs, []);
+    assert.equal(parsed.state.onboardedAt, null);
   }
+});
+
+test("des programmes présents mais illisibles sont remplacés par les exemples, avec un message", () => {
+  const parsed = parseAppState({ version: 2, programs: "cassé", history: [] }, NOW);
+  assert.equal(parsed.state.programs.length, SEED_PROGRAMS.length);
+  assert.ok(parsed.issues.some((issue) => issue.includes("exemple")));
 });
 
 test("parsing repairs a partially corrupted state instead of throwing", () => {

@@ -1,4 +1,10 @@
-import { DEFAULT_SETTINGS, SEED_PROGRAMS, createInitialState } from "../domain/seed.ts";
+import { catalogTemplate } from "../domain/catalog/index.ts";
+import {
+  CURRENT_VERSION,
+  DEFAULT_SETTINGS,
+  SEED_PROGRAMS,
+  createInitialState,
+} from "../domain/seed.ts";
 import type {
   AppState,
   Effort,
@@ -25,7 +31,7 @@ import type {
  * `issues`, so a corrupted record costs the user one setting, never the app.
  */
 
-export const CURRENT_VERSION = 1;
+export { CURRENT_VERSION } from "../domain/seed.ts";
 
 type Issues = string[];
 
@@ -50,6 +56,11 @@ function oneOf<T extends string>(value: unknown, allowed: readonly T[], fallback
     : fallback;
 }
 
+/** Un instant, ou `null` — jamais `NaN`, jamais une chaîne de date. */
+function time(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
 function numberList(value: unknown, length: number, fallback: number[]): number[] {
   const source = Array.isArray(value) ? value : fallback;
   return Array.from({ length }, (_, index) =>
@@ -72,7 +83,7 @@ function parseExercise(raw: unknown, template: ExerciseTemplate | null, issues: 
     return template;
   }
 
-  const base = template ?? SEED_PROGRAMS.flatMap((p) => p.exercises).find((e) => e.id === id) ?? null;
+  const base = template ?? catalogTemplate(id);
   const sets = Math.max(1, Math.round(num(raw.sets, base?.sets ?? 3)));
   const repMin = Math.max(1, Math.round(num(raw.repMin, base?.repMin ?? 8)));
   const repMax = Math.max(repMin, Math.round(num(raw.repMax, base?.repMax ?? repMin)));
@@ -101,10 +112,14 @@ function parseExercise(raw: unknown, template: ExerciseTemplate | null, issues: 
 
 function parsePrograms(raw: unknown, issues: Issues): Program[] {
   // An empty array is a deliberate choice — the user deleted every program.
-  // Restoring the defaults there would silently undo their edit.
+  // Restoring the examples there would silently undo their edit.
   if (Array.isArray(raw) && raw.length === 0) return [];
+  // No `programs` key at all: a brand new install, or a record so damaged that
+  // nothing can be inferred. Either way the welcome screen asks what to load —
+  // handing over someone else's example programs is not the app's call.
+  if (raw === undefined) return [];
   if (!Array.isArray(raw)) {
-    if (raw !== undefined) issues.push("Programmes illisibles — programmes par défaut restaurés.");
+    issues.push("Programmes illisibles — séances d'exemple restaurées.");
     return structuredClone(SEED_PROGRAMS);
   }
 
@@ -139,7 +154,7 @@ function parsePrograms(raw: unknown, issues: Issues): Program[] {
   }
 
   if (programs.length === 0 && raw.length > 0) {
-    issues.push("Aucun programme valide — programmes par défaut restaurés.");
+    issues.push("Aucun programme valide — séances d'exemple restaurées.");
     return structuredClone(SEED_PROGRAMS);
   }
   return programs;
@@ -159,7 +174,7 @@ function parseSessionExercise(raw: unknown): SessionExercise | null {
   if (!isObject(raw)) return null;
   const exerciseId = str(raw.exerciseId, "");
   if (!exerciseId) return null;
-  const seed = SEED_PROGRAMS.flatMap((p) => p.exercises).find((e) => e.id === exerciseId) ?? null;
+  const seed = catalogTemplate(exerciseId);
   const repMin = Math.max(1, Math.round(num(raw.repMin, seed?.repMin ?? 8)));
   const rawSets = Array.isArray(raw.sets) ? raw.sets : [];
 
@@ -337,12 +352,19 @@ export function parseAppState(raw: unknown, now: number): ParseResult {
     );
   }
 
+  const createdAt = num(source.createdAt, now);
+  const programs = parsePrograms(source.programs, issues);
+  const history = parseHistory(source.history);
+
   const state: AppState = {
     version: CURRENT_VERSION,
-    createdAt: num(source.createdAt, now),
-    programs: parsePrograms(source.programs, issues),
+    createdAt,
+    onboardedAt: parseOnboardedAt(source.onboardedAt, { createdAt, programs, history }),
+    lastBackupAt: time(source.lastBackupAt),
+    backupPromptedAt: time(source.backupPromptedAt),
+    programs,
     session: parseSession(source.session, now, issues),
-    history: parseHistory(source.history),
+    history,
     records: parseRecords(source.records),
     lastCompletedProgramId:
       typeof source.lastCompletedProgramId === "string" ? source.lastCompletedProgramId : null,
@@ -350,4 +372,22 @@ export function parseAppState(raw: unknown, now: number): ParseResult {
   };
 
   return { state, issues, fresh: false };
+}
+
+/**
+ * Migration v1 → v2 : `onboardedAt` n'existait pas.
+ *
+ * Une sauvegarde qui contient déjà des séances ou de l'historique appartient à
+ * quelqu'un qui utilise l'app depuis un moment — lui présenter l'écran de
+ * bienvenue serait absurde. À l'inverse, un enregistrement vide vient d'une
+ * installation neuve : la question doit être posée.
+ */
+function parseOnboardedAt(
+  raw: unknown,
+  context: { createdAt: number; programs: Program[]; history: HistoryEntry[] },
+): number | null {
+  const stored = time(raw);
+  if (stored !== null) return stored;
+  const hasContent = context.programs.length > 0 || context.history.length > 0;
+  return hasContent ? context.createdAt : null;
 }

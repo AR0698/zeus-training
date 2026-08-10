@@ -1,4 +1,5 @@
 import { ACCENTS, makeEmptyProgram, patchExercise } from "../domain/library.ts";
+import { completeOnboarding } from "../domain/onboarding.ts";
 import { clampLoad, applySessionToPrograms, weightStep } from "../domain/progression.ts";
 import { createSession, beatsRecord, finishSession } from "../domain/session.ts";
 import { createInitialState } from "../domain/seed.ts";
@@ -52,6 +53,18 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case "settings/update":
       return { ...state, settings: { ...state.settings, ...action.patch } };
+
+    case "onboarding/finish":
+      return completeOnboarding(state, action.choice);
+
+    // Un export réussi remet le compteur du rappel mensuel à zéro, et efface le
+    // report en cours : la question suivante se posera dans un mois, pas dans
+    // les sept jours restants du dernier « plus tard ».
+    case "backup/exported":
+      return { ...state, lastBackupAt: action.now, backupPromptedAt: null };
+
+    case "backup/snooze":
+      return { ...state, backupPromptedAt: action.now };
 
     case "program/setTarget":
     case "program/adjustTarget": {

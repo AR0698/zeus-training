@@ -8,6 +8,8 @@ import "./styles/base.css";
 import "./styles/components.css";
 import "./styles/screens.css";
 import "./styles/editor.css";
+import "./styles/welcome.css";
+import "./styles/share.css";
 
 const container = document.getElementById("root");
 if (!container) throw new Error("Élément #root introuvable");

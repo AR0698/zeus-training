@@ -63,6 +63,17 @@ export function readBackup(text: string, now: number): ImportResult {
   return { ok: true, state: parsed.state, issues: parsed.issues };
 }
 
+/**
+ * Choix d'un fichier puis relecture, en une étape.
+ * `null` quand la personne a fermé le sélecteur sans rien choisir — ce n'est
+ * pas une erreur et l'appelant ne doit rien afficher.
+ */
+export async function pickAndReadBackup(now: number): Promise<ImportResult | null> {
+  const text = await pickBackupFile();
+  if (text === null) return null;
+  return readBackup(text, now);
+}
+
 export async function pickBackupFile(): Promise<string | null> {
   return new Promise((resolve) => {
     const input = document.createElement("input");

@@ -1,27 +1,41 @@
+import { catalogTemplate } from "./catalog/index.ts";
 import type { AppState, ExerciseTemplate, Program, Settings } from "./types.ts";
 
 /**
- * Neutral starting programs.
+ * Les séances d'exemple.
  *
- * The structure (Upper/Lower × A/B) comes from the ROADY TO ZEUS notebook, but
- * the loads here are deliberately conservative placeholders: this file ships in
- * a public repository. Real loads live only on the device, either typed in or
- * restored from a personal backup file (Réglages → Importer une sauvegarde).
+ * Elles ne sont **plus chargées au démarrage** : une nouvelle installation part
+ * d'une bibliothèque vide, et l'écran d'accueil propose de créer sa première
+ * séance, de charger ces exemples, ou d'importer une sauvegarde. Personne ne se
+ * retrouve avec le programme de quelqu'un d'autre.
+ *
+ * La structure (Upper/Lower × A/B) vient du carnet ROADY TO ZEUS ; les charges
+ * sont des repères volontairement prudents, puisque ce fichier est publié.
  */
 
-type ExerciseInput = Omit<ExerciseTemplate, "unit" | "lastWeights" | "restSeconds"> &
-  Partial<Pick<ExerciseTemplate, "unit" | "lastWeights" | "restSeconds">>;
+type SeedExercise = {
+  id: string;
+  /** Consigne propre à cette séance, quand elle diffère de la fiche catalogue. */
+  tip?: string;
+};
 
-function makeExercise(input: ExerciseInput): ExerciseTemplate {
-  const unit = input.unit ?? "kg";
-  const restSeconds = input.restSeconds ?? (input.group === "lower" ? 120 : input.group === "core" ? 45 : 90);
-  return {
-    ...input,
-    unit,
-    restSeconds,
-    lastWeights: input.lastWeights ?? [...input.targetWeights],
-  };
+/**
+ * Un exercice inconnu du catalogue est ignoré plutôt que de faire échouer le
+ * module : un exemple incomplet reste utilisable, un écran blanc au démarrage
+ * ne l'est pas. Un test vérifie que rien n'est ignoré en pratique.
+ */
+function fromCatalog(entries: SeedExercise[]): ExerciseTemplate[] {
+  const exercises: ExerciseTemplate[] = [];
+  for (const { id, tip } of entries) {
+    const template = catalogTemplate(id);
+    if (!template) continue;
+    exercises.push(tip ? { ...template, tip } : template);
+  }
+  return exercises;
 }
+
+const SUPERSET_START = "Superset avec les triceps : enchaîne sans pause.";
+const SUPERSET_END = "Deuxième moitié du superset bras : à enchaîner après le curl.";
 
 export const SEED_PROGRAMS: Program[] = [
   {
@@ -31,109 +45,15 @@ export const SEED_PROGRAMS: Program[] = [
     accent: "acid",
     warmup: "5 min rameur + rotations d'épaules",
     estimatedMinutes: 60,
-    exercises: [
-      makeExercise({
-        id: "chest-press",
-        name: "Chest Press (machine)",
-        shortName: "Chest Press",
-        group: "upper",
-        sets: 3,
-        repMin: 12,
-        repMax: 15,
-        targetWeights: [20, 25, 30],
-        cue: "Poignées au milieu des pectoraux, épaules basses.",
-        tip: "Expire en poussant, omoplates plaquées contre le dossier.",
-        videoUrl: "https://musclewiki.com/exercise/machine-chest-press",
-        alternatives: ["Développé haltères", "Pompes lestées", "Pec Deck"],
-      }),
-      makeExercise({
-        id: "lat-pulldown",
-        name: "Tirage vertical",
-        shortName: "Tirage vertical",
-        group: "upper",
-        sets: 3,
-        repMin: 12,
-        repMax: 15,
-        targetWeights: [20, 25, 30],
-        cue: "Poitrine haute, tire les coudes vers les côtes.",
-        tip: "Ne balance pas le buste et contrôle la remontée.",
-        videoUrl: "https://musclewiki.com/exercise/machine-pulldown",
-        alternatives: ["Tirage prise serrée", "Tractions assistées", "Pullover poulie"],
-      }),
-      makeExercise({
-        id: "incline-db-press",
-        name: "Développé incliné haltères",
-        shortName: "Dév. incliné",
-        group: "upper",
-        sets: 3,
-        repMin: 10,
-        repMax: 12,
-        targetWeights: [10, 12, 14],
-        cue: "Banc à 30°, poignets au-dessus des coudes.",
-        tip: "Descends lentement sans décoller les épaules du banc.",
-        videoUrl: "https://musclewiki.com/exercise/dumbbell-incline-bench-press",
-        alternatives: ["Chest Press inclinée", "Développé guidé", "Pompes inclinées"],
-      }),
-      makeExercise({
-        id: "seated-row",
-        name: "Rowing assis",
-        shortName: "Rowing assis",
-        group: "upper",
-        sets: 3,
-        repMin: 12,
-        repMax: 12,
-        targetWeights: [20, 25, 30],
-        cue: "Torse fixe, serre les omoplates en fin de tirage.",
-        tip: "Tire avec les coudes, pas avec les mains.",
-        videoUrl: "https://musclewiki.com/exercise/machine-seated-row",
-        alternatives: ["Rowing haltère", "T-bar row", "Tirage poulie basse"],
-      }),
-      makeExercise({
-        id: "biceps-curl",
-        name: "Curl biceps haltères",
-        shortName: "Curl biceps",
-        group: "upper",
-        sets: 3,
-        repMin: 12,
-        repMax: 12,
-        targetWeights: [6, 8, 10],
-        restSeconds: 45,
-        cue: "Coudes collés au corps, buste immobile.",
-        tip: "Superset avec les triceps : enchaîne sans pause.",
-        videoUrl: "https://musclewiki.com/exercise/dumbbell-curl",
-        alternatives: ["Curl marteau", "Curl poulie", "Curl machine"],
-      }),
-      makeExercise({
-        id: "triceps-rope",
-        name: "Extension triceps poulie corde",
-        shortName: "Triceps corde",
-        group: "upper",
-        sets: 3,
-        repMin: 15,
-        repMax: 15,
-        targetWeights: [7.5, 10, 10],
-        restSeconds: 60,
-        cue: "Coudes verrouillés le long du buste, écarte la corde en bas.",
-        tip: "Deuxième moitié du superset bras : à enchaîner après le curl.",
-        videoUrl: "https://musclewiki.com/exercise/cable-tricep-pushdown",
-        alternatives: ["Triceps poulie barre", "Dips assistés", "Extension nuque haltère"],
-      }),
-      makeExercise({
-        id: "lateral-raise",
-        name: "Élévations latérales",
-        shortName: "Élévations lat.",
-        group: "upper",
-        sets: 3,
-        repMin: 15,
-        repMax: 15,
-        targetWeights: [4, 5, 6],
-        restSeconds: 45,
-        cue: "Coudes souples, mains légèrement sous les coudes.",
-        tip: "Arrête à hauteur d'épaules, ne hausse pas les trapèzes.",
-        videoUrl: "https://youtube.com/shorts/LSR0v3Q9dTg",
-        alternatives: ["Élévations poulie", "Machine deltoïdes", "Oiseau léger"],
-      }),
-    ],
+    exercises: fromCatalog([
+      { id: "chest-press" },
+      { id: "lat-pulldown" },
+      { id: "incline-db-press" },
+      { id: "seated-row" },
+      { id: "biceps-curl", tip: SUPERSET_START },
+      { id: "triceps-rope", tip: SUPERSET_END },
+      { id: "lateral-raise" },
+    ]),
   },
   {
     id: "lower-a",
@@ -142,80 +62,13 @@ export const SEED_PROGRAMS: Program[] = [
     accent: "orange",
     warmup: "5 min vélo + proprioception chevilles",
     estimatedMinutes: 55,
-    exercises: [
-      makeExercise({
-        id: "leg-press",
-        name: "Presse à cuisses",
-        shortName: "Leg Press",
-        group: "lower",
-        sets: 4,
-        repMin: 12,
-        repMax: 15,
-        targetWeights: [30, 40, 50, 50],
-        cue: "Pieds au milieu du plateau, genoux dans l'axe.",
-        tip: "Ne verrouille jamais les genoux en haut.",
-        videoUrl: "https://musclewiki.com/exercise/machine-horizontal-leg-press",
-        alternatives: ["Hack squat", "Goblet squat", "Fentes marchées"],
-      }),
-      makeExercise({
-        id: "lunges",
-        name: "Fentes avec haltères",
-        shortName: "Fentes",
-        group: "lower",
-        sets: 3,
-        repMin: 10,
-        repMax: 10,
-        targetWeights: [5, 6, 8],
-        cue: "Grand pas, genou avant dans l'axe du pied.",
-        tip: "Fais 10 répétitions à vide avant la première série.",
-        videoUrl: "https://musclewiki.com/exercise/dumbbell-walking-lunge",
-        alternatives: ["Split squat", "Fentes arrière", "Step-up"],
-      }),
-      makeExercise({
-        id: "leg-extension",
-        name: "Leg Extension",
-        shortName: "Leg Extension",
-        group: "lower",
-        sets: 3,
-        repMin: 15,
-        repMax: 20,
-        targetWeights: [20, 25, 30],
-        cue: "Axe de la machine aligné avec le genou.",
-        tip: "Une seconde de pause en haut, puis descente contrôlée.",
-        videoUrl: "https://musclewiki.com/exercise/machine-leg-extension",
-        alternatives: ["Sissy squat assisté", "Wall sit", "Step-up"],
-      }),
-      makeExercise({
-        id: "plank",
-        name: "Gainage planche",
-        shortName: "Planche",
-        group: "core",
-        unit: "sec",
-        sets: 3,
-        repMin: 45,
-        repMax: 60,
-        targetWeights: [45, 45, 45],
-        restSeconds: 15,
-        cue: "Fessiers serrés, bassin neutre, nuque longue.",
-        tip: "Respire lentement sans laisser tomber les hanches.",
-        videoUrl: "https://musclewiki.com/exercise/plank",
-        alternatives: ["Planche latérale", "Dead bug", "Bird dog"],
-      }),
-      makeExercise({
-        id: "machine-crunch",
-        name: "Crunch machine",
-        shortName: "Crunch",
-        group: "core",
-        sets: 3,
-        repMin: 15,
-        repMax: 20,
-        targetWeights: [10, 15, 20],
-        cue: "Enroule les côtes vers le bassin.",
-        tip: "Ne tire pas avec les bras : le mouvement vient des abdos.",
-        videoUrl: "https://musclewiki.com/exercise/machine-crunch",
-        alternatives: ["Crunch câble", "Reverse crunch", "Dead bug"],
-      }),
-    ],
+    exercises: fromCatalog([
+      { id: "leg-press" },
+      { id: "lunges" },
+      { id: "leg-extension" },
+      { id: "plank" },
+      { id: "machine-crunch" },
+    ]),
   },
   {
     id: "upper-b",
@@ -224,96 +77,14 @@ export const SEED_PROGRAMS: Program[] = [
     accent: "sky",
     warmup: "5 min elliptique + mobilité épaules",
     estimatedMinutes: 55,
-    exercises: [
-      makeExercise({
-        id: "shoulder-press",
-        name: "Shoulder Press (machine)",
-        shortName: "Shoulder Press",
-        group: "upper",
-        sets: 3,
-        repMin: 12,
-        repMax: 12,
-        targetWeights: [10, 15, 20],
-        cue: "Poignées à hauteur d'oreilles, dos contre le siège.",
-        tip: "Garde les côtes basses, ne verrouille pas brutalement.",
-        videoUrl: "https://musclewiki.com/exercise/machine-overhand-overhead-press",
-        alternatives: ["Développé haltères", "Landmine press", "Élévations frontales"],
-      }),
-      makeExercise({
-        id: "horizontal-row",
-        name: "Tirage horizontal neutre",
-        shortName: "Tirage horizontal",
-        group: "upper",
-        sets: 3,
-        repMin: 12,
-        repMax: 12,
-        targetWeights: [15, 25, 35],
-        cue: "Poitrine ouverte, épaules basses.",
-        tip: "Courte pause quand les omoplates se rapprochent.",
-        videoUrl: "https://musclewiki.com/exercise/machine-seated-row",
-        alternatives: ["Rowing assis", "Rowing poitrine appuyée", "Rowing haltère"],
-      }),
-      makeExercise({
-        id: "pec-deck",
-        name: "Pec Deck",
-        shortName: "Pec Deck",
-        group: "upper",
-        sets: 3,
-        repMin: 15,
-        repMax: 15,
-        targetWeights: [15, 20, 25],
-        restSeconds: 60,
-        cue: "Coude souple, épaules collées au dossier.",
-        tip: "Rapproche les bras sans laisser les poids claquer.",
-        videoUrl: "https://musclewiki.com/exercise/machine-chest-fly",
-        alternatives: ["Poulie vis-à-vis", "Pompes lentes", "Chest Press légère"],
-      }),
-      makeExercise({
-        id: "rear-delt",
-        name: "Oiseau / deltoïdes arrière",
-        shortName: "Oiseau",
-        group: "upper",
-        sets: 3,
-        repMin: 15,
-        repMax: 15,
-        targetWeights: [15, 20, 25],
-        restSeconds: 60,
-        cue: "Épaules basses, bras ouverts dans l'axe.",
-        tip: "Choisis léger : la qualité prime sur l'amplitude forcée.",
-        videoUrl: "https://musclewiki.com/exercise/machine-reverse-fly",
-        alternatives: ["Face pull", "Oiseau haltères", "Band pull-apart"],
-      }),
-      makeExercise({
-        id: "hammer-curl",
-        name: "Curl marteau",
-        shortName: "Curl marteau",
-        group: "upper",
-        sets: 3,
-        repMin: 12,
-        repMax: 12,
-        targetWeights: [6, 8, 10],
-        restSeconds: 45,
-        cue: "Pouces vers le plafond, coudes fixes.",
-        tip: "Superset avec les triceps : enchaîne sans pause.",
-        videoUrl: "https://musclewiki.com/exercise/dumbbell-hammer-curl",
-        alternatives: ["Curl biceps", "Curl corde", "Curl machine"],
-      }),
-      makeExercise({
-        id: "triceps-bar",
-        name: "Triceps poulie barre",
-        shortName: "Triceps barre",
-        group: "upper",
-        sets: 3,
-        repMin: 12,
-        repMax: 12,
-        targetWeights: [7.5, 10, 10],
-        restSeconds: 60,
-        cue: "Coudes serrés, extension complète sans bouger les épaules.",
-        tip: "Deuxième moitié du superset bras : à enchaîner après le curl.",
-        videoUrl: "https://musclewiki.com/exercise/cable-tricep-pushdown",
-        alternatives: ["Triceps corde", "Dips assistés", "Kickback haltère"],
-      }),
-    ],
+    exercises: fromCatalog([
+      { id: "shoulder-press" },
+      { id: "horizontal-row" },
+      { id: "pec-deck" },
+      { id: "rear-delt" },
+      { id: "hammer-curl", tip: SUPERSET_START },
+      { id: "triceps-bar", tip: SUPERSET_END },
+    ]),
   },
   {
     id: "lower-b",
@@ -322,84 +93,28 @@ export const SEED_PROGRAMS: Program[] = [
     accent: "violet",
     warmup: "5 min escalier + mobilité de hanches",
     estimatedMinutes: 50,
-    exercises: [
-      makeExercise({
-        id: "leg-curl",
-        name: "Leg Curl",
-        shortName: "Leg Curl",
-        group: "lower",
-        sets: 4,
-        repMin: 15,
-        repMax: 15,
-        targetWeights: [15, 20, 25, 25],
-        cue: "Bassin lourd sur le siège, chevilles relâchées.",
-        tip: "En premier pour pré-fatiguer les ischios et protéger le genou.",
-        videoUrl: "https://musclewiki.com/exercise/machine-seated-leg-curl",
-        alternatives: ["Leg curl allongé", "Swiss ball curl", "Soulevé de terre roumain"],
-      }),
-      makeExercise({
-        id: "high-leg-press",
-        name: "Leg Press — pieds hauts",
-        shortName: "Press pieds hauts",
-        group: "lower",
-        sets: 3,
-        repMin: 12,
-        repMax: 12,
-        targetWeights: [30, 40, 50],
-        cue: "Pieds en haut du plateau, dos bien plaqué.",
-        tip: "Pousse à travers les talons sans décoller le bassin.",
-        videoUrl: "https://musclewiki.com/exercise/machine-leg-press",
-        alternatives: ["Hip thrust", "Soulevé de terre roumain", "Fentes arrière"],
-      }),
-      makeExercise({
-        id: "abductor",
-        name: "Abducteurs machine",
-        shortName: "Abducteurs",
-        group: "lower",
-        sets: 3,
-        repMin: 20,
-        repMax: 20,
-        targetWeights: [25, 30, 35],
-        restSeconds: 60,
-        cue: "Bassin fixe, ouvre les genoux sans rebond.",
-        tip: "Marque une pause en ouverture pour stabiliser le bassin.",
-        videoUrl: "https://musclewiki.com/exercise/machine-hip-abduction",
-        alternatives: ["Marche latérale élastique", "Abduction poulie", "Side plank"],
-      }),
-      makeExercise({
-        id: "calf-raise",
-        name: "Extensions mollets",
-        shortName: "Mollets",
-        group: "lower",
-        sets: 4,
-        repMin: 15,
-        repMax: 15,
-        targetWeights: [25, 30, 35, 35],
-        restSeconds: 60,
-        cue: "Amplitude complète, genoux souples.",
-        tip: "Pause en haut et étirement contrôlé en bas.",
-        videoUrl: "https://musclewiki.com/exercise/machine-calf-raise",
-        alternatives: ["Mollets debout", "Mollets presse", "Mollets unilatéraux"],
-      }),
-      makeExercise({
-        id: "mountain-climber",
-        name: "Mountain Climbers",
-        shortName: "Mountain Climbers",
-        group: "core",
-        unit: "sec",
-        sets: 4,
-        repMin: 30,
-        repMax: 30,
-        targetWeights: [30, 30, 30, 30],
-        restSeconds: 30,
-        cue: "Épaules au-dessus des mains, bassin stable.",
-        tip: "Rythme régulier sans arrondir le bas du dos.",
-        videoUrl: "https://musclewiki.com/exercise/mountain-climber",
-        alternatives: ["Dead bug", "Planche dynamique", "High knees"],
-      }),
-    ],
+    exercises: fromCatalog([
+      { id: "leg-curl" },
+      { id: "high-leg-press" },
+      { id: "abductor" },
+      { id: "calf-raise" },
+      { id: "mountain-climber" },
+    ]),
   },
 ];
+
+/** Une copie neuve des exemples, prête à être modifiée par son propriétaire. */
+export function examplePrograms(): Program[] {
+  return structuredClone(SEED_PROGRAMS);
+}
+
+/**
+ * Version du schéma persisté.
+ *
+ * Déclarée ici, avec la fabrique d'état neuf, pour que les deux ne puissent pas
+ * diverger : `state/schema.ts` la réexporte et l'utilise pour les migrations.
+ */
+export const CURRENT_VERSION = 2;
 
 export const DEFAULT_SETTINGS: Settings = {
   theme: "auto",
@@ -410,11 +125,18 @@ export const DEFAULT_SETTINGS: Settings = {
   displayName: "",
 };
 
+/**
+ * L'état d'une installation neuve : aucune séance, aucun historique.
+ * `onboardedAt` à `null` est ce qui déclenche l'écran d'accueil.
+ */
 export function createInitialState(now: number): AppState {
   return {
-    version: 1,
+    version: CURRENT_VERSION,
     createdAt: now,
-    programs: structuredClone(SEED_PROGRAMS),
+    onboardedAt: null,
+    lastBackupAt: null,
+    backupPromptedAt: null,
+    programs: [],
     session: null,
     history: [],
     records: {},

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { formatDuration } from "../../domain/format.ts";
+import { daysSinceBackup } from "../../domain/reminder.ts";
 import type { AppState, Settings } from "../../domain/types.ts";
-import { downloadBackup, pickBackupFile, readBackup } from "../../storage/backup.ts";
+import { pickAndReadBackup } from "../../storage/backup.ts";
 import { requestPersistentStorage, storageKind } from "../../storage/db.ts";
 import { Segmented } from "../components/Segmented.tsx";
 import { Sheet } from "../components/Sheet.tsx";
@@ -15,18 +16,23 @@ import {
   IconTrash,
   IconUpload,
 } from "../icons.tsx";
+import { ShareSection } from "./ShareSection.tsx";
 
 const REST_CHOICES = [45, 60, 90, 120, 180];
 
 export function SettingsScreen({
   state,
+  now,
   onUpdate,
+  onExport,
   onImport,
   onReset,
   notify,
 }: {
   state: AppState;
+  now: number;
   onUpdate: (patch: Partial<Settings>) => void;
+  onExport: () => void;
   onImport: (next: AppState, issues: string[]) => void;
   onReset: () => void;
   notify: (message: string, tone?: "success" | "warn" | "danger") => void;
@@ -48,15 +54,16 @@ export function SettingsScreen({
   }, []);
 
   const handleImport = async () => {
-    const text = await pickBackupFile();
-    if (text === null) return;
-    const result = readBackup(text, Date.now());
+    const result = await pickAndReadBackup(Date.now());
+    if (result === null) return;
     if (!result.ok) {
       notify(result.error, "danger");
       return;
     }
     onImport(result.state, result.issues);
   };
+
+  const backupAge = daysSinceBackup(state, now);
 
   return (
     <>
@@ -148,18 +155,12 @@ export function SettingsScreen({
         <h2 className="panel-title">Sauvegarde</h2>
         <p className="lead">
           Tout est stocké sur cet appareil, rien n&apos;est envoyé sur un serveur. La contrepartie :
-          une sauvegarde exportée régulièrement est ta seule copie de secours.
+          une sauvegarde exportée régulièrement est ta seule copie de secours. Dépose le fichier sur
+          Drive, iCloud, ou envoie-le-toi par mail — l&apos;app te le rappellera chaque mois.
         </p>
 
         <div className="button-row">
-          <button
-            type="button"
-            className="button button-solid"
-            onClick={() => {
-              downloadBackup(state, Date.now());
-              notify("Sauvegarde exportée", "success");
-            }}
-          >
+          <button type="button" className="button button-solid" onClick={onExport}>
             <IconDownload size={18} />
             Exporter
           </button>
@@ -170,6 +171,18 @@ export function SettingsScreen({
         </div>
 
         <dl className="meta-list">
+          <div>
+            <dt>Dernière sauvegarde</dt>
+            <dd>
+              {backupAge === null ? (
+                <span className="status-warn">Jamais</span>
+              ) : backupAge === 0 ? (
+                "Aujourd'hui"
+              ) : (
+                `Il y a ${backupAge} jour${backupAge > 1 ? "s" : ""}`
+              )}
+            </dd>
+          </div>
           <div>
             <dt>Stockage</dt>
             <dd>{storageLabel()}</dd>
@@ -209,11 +222,14 @@ export function SettingsScreen({
         </dl>
       </section>
 
+      <ShareSection displayName={state.settings.displayName} notify={notify} />
+
       <section className="card panel panel-danger">
         <span className="kicker">Zone sensible</span>
         <h2 className="panel-title">Repartir de zéro</h2>
         <p className="lead">
-          Efface l&apos;historique, les records et remet les programmes par défaut. Exporte une
+          Efface les séances, l&apos;historique et les records : l&apos;application revient à
+          l&apos;état d&apos;une installation neuve, écran de bienvenue compris. Exporte une
           sauvegarde avant.
         </p>
         <button type="button" className="button button-danger" onClick={() => setConfirmReset(true)}>
@@ -231,7 +247,8 @@ export function SettingsScreen({
         <span className="kicker">Confirmation</span>
         <h2 className="sheet-title">Tout effacer ?</h2>
         <p className="lead">
-          {state.history.length} séance{state.history.length > 1 ? "s" : ""} et{" "}
+          {state.programs.length} séance{state.programs.length > 1 ? "s" : ""},{" "}
+          {state.history.length} entrée{state.history.length > 1 ? "s" : ""} d&apos;historique et{" "}
           {Object.keys(state.records).length} record{Object.keys(state.records).length > 1 ? "s" : ""}{" "}
           seront supprimés de cet appareil. Cette action peut être annulée juste après, via
           « Annuler » dans la notification.
