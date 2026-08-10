@@ -103,8 +103,9 @@ C'est une correction directe de la version précédente, qui affichait « 3 séa
 - **`ErrorBoundary`** : un crash d'affichage propose de recharger et de **télécharger les données brutes**. Une session n'est jamais prisonnière d'un build cassé.
 - **Séance oubliée** : une séance ouverte depuis plus de cinq heures déclenche un choix explicite — reprendre, enregistrer telle quelle, abandonner — au lieu d'afficher un chrono à 14 h.
 - **Feuilles modales** : élément natif `<dialog>`, donc piège de focus, `Échap`, et arrière-plan inerte gérés par la plateforme plutôt que réimplémentés de travers.
-- **Cibles tactiles** ≥ 44 px partout ; sous 640 px chaque série passe sur deux lignes pour que le bouton de validation reste large et atteignable au pouce.
-- **Contraste** : chaque paire texte/fond des deux thèmes est au-dessus de 4,5:1 ; les jetons sont commentés avec leur ratio dans `styles/tokens.css`.
+- **Cibles tactiles** ≥ 44 px partout, mesurées écran par écran plutôt que supposées : l'audit a trouvé les flèches de réordonnancement à 28×24, les puces du rail d'exercices et du minuteur de repos à 36, les boutons ± à 42 (la bordure était comprise dans la hauteur), et la croix de fermeture des feuilles à 36. Sous 640 px chaque série passe sur deux lignes pour que le bouton de validation reste large et atteignable au pouce.
+- **Contraste** : vérifié en mesurant les couleurs **composées** dans le navigateur (alpha, `color-mix`, `oklab` résolus), pas en lisant les jetons. Cette mesure a révélé quatre défauts invisibles à l'œil : `--text-3` à 4,41:1 en thème clair, le même jeton à 3,89:1 sur `--surface-3` en sombre, les libellés de série sur une ligne validée à 3,51:1, et le bouton de réinitialisation qui ne passait 4,5:1 avec **aucune** encre — ni noire (4,32) ni blanche (4,41). Les ratios notés dans `styles/tokens.css` sont désormais les valeurs mesurées, sur les trois surfaces de chaque thème.
+- **Saisie** : tout champ de texte est à 16 px minimum. En dessous, Safari iOS zoome le viewport à la mise au point — le champ de correction de charge, en pleine séance, laissait la page agrandie à recadrer d'une main.
 - **`prefers-reduced-motion`** désactive les animations ; aucune information n'est portée par la couleur seule.
 
 ---

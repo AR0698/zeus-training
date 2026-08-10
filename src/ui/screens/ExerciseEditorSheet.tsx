@@ -54,7 +54,11 @@ export function ExerciseEditorSheet({
   }, [exerciseId]);
 
   if (!exercise) {
-    return <Sheet open={false} onClose={onClose} label="Modifier l'exercice" size="wide" children={null} />;
+    return (
+      <Sheet open={false} onClose={onClose} label="Modifier l'exercice" size="wide">
+        {null}
+      </Sheet>
+    );
   }
 
   const step = (index: number) =>
@@ -202,8 +206,8 @@ export function ExerciseEditorSheet({
         </div>
       </div>
 
-      <div className="field">
-        <span className="field-label">Repos entre les séries</span>
+      <div className="field" role="group" aria-labelledby="exercise-rest-label">
+        <span className="field-label" id="exercise-rest-label">Repos entre les séries</span>
         <div className="chip-row">
           {REST_CHOICES.map((seconds) => (
             <button

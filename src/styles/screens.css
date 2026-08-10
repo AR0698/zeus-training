@@ -630,8 +630,8 @@
   align-items: center;
   gap: var(--space-2);
   flex: 0 0 auto;
-  min-height: 2.25rem;
-  padding: 0 var(--space-3);
+  min-height: var(--tap-min);
+  padding: 0 var(--space-4);
   border-radius: var(--radius-full);
   border: 1px solid var(--line);
   background: var(--surface-2);
@@ -647,6 +647,9 @@
   background: var(--accent-soft);
   color: var(--accent-text);
 }
+/* Sur le fond teinté de l'accent, --text-3 tombe sous 4,5:1 : le numéro
+   reprend la couleur d'accent, qui elle est calibrée pour ce fond. */
+.rail-chip.is-current .rail-index { color: var(--accent-text); }
 .rail-chip.done { color: var(--success-text); border-color: color-mix(in oklab, var(--success) 40%, var(--line)); }
 .rail-chip.skipped { opacity: 0.55; text-decoration: line-through; }
 
@@ -675,6 +678,7 @@
   justify-content: space-between;
   gap: var(--space-3);
 }
+.exercise-card-head > .icon-button { flex: 0 0 auto; }
 .exercise-card-head h2 { font-size: var(--text-xl); margin: var(--space-1) 0; }
 .swap-note {
   display: inline-block;
@@ -717,6 +721,8 @@
   color: var(--text-3);
 }
 .set-row.is-done { background: var(--accent-soft); }
+/* Même raison : la ligne validée éclaircit le fond sous les libellés. */
+.set-row.is-done .set-cell-label { color: var(--text-2); }
 .set-index {
   display: inline-flex;
   align-items: center;

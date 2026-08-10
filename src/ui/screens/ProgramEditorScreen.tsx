@@ -62,7 +62,10 @@ export function ProgramEditorScreen({
           <button type="button" className="icon-button" onClick={onBack} aria-label="Retour aux programmes">
             <IconArrowLeft size={18} />
           </button>
-          <span className="kicker">
+          {/* L'écran n'avait pas de h1 : la hiérarchie des titres sautait
+              directement au h2 des sections. */}
+          <h1 className="visually-hidden">Édition de {program.name}</h1>
+          <span className="kicker" aria-hidden="true">
             Séance {index + 1} sur {total}
           </span>
           <div className="editor-top-actions">
@@ -136,8 +139,8 @@ export function ProgramEditorScreen({
             <span className="field-help">En minutes, échauffement compris.</span>
           </label>
 
-          <div className="field">
-            <span className="field-label">Couleur</span>
+          <div className="field" role="group" aria-labelledby="program-accent-label">
+            <span className="field-label" id="program-accent-label">Couleur</span>
             <div className="chip-row">
               {ACCENTS.map((accent) => (
                 <button

@@ -99,9 +99,11 @@
   --line: #2b2b26;
   --line-strong: #3b3b34;
 
-  --text: #f6f6f1;      /* 18.2:1 on --bg */
-  --text-2: #a9aaa1;    /*  9.1:1 */
-  --text-3: #7e8077;    /*  5.4:1 */
+  /* Ratios mesurés dans le navigateur, sur --bg / --surface / --surface-3.
+     --text-3 porte les petits libellés : il doit tenir 4,5:1 sur les trois. */
+  --text: #f6f6f1;      /* 18.3 / 17.0 / 12.6 */
+  --text-2: #a9aaa1;    /*  8.4 /  7.9 /  6.6 */
+  --text-3: #8a8c83;    /*  5.8 /  5.4 /  4.6 */
 
   --accent: var(--acid);
   --accent-ink: #0a0a09;
@@ -114,6 +116,7 @@
   --warn: #ffc53d;
   --warn-text: #ffcf5c;
   --danger: #ff7060;
+  --danger-ink: #10100c;   /* 7.0:1 sur --danger */
   --danger-text: #ff8b7d;
   --info: #74d0ff;
 
@@ -143,9 +146,9 @@
   --line: #dfe0d6;
   --line-strong: #c5c6ba;
 
-  --text: #121210;      /* 16.9:1 on --bg */
-  --text-2: #53554c;    /*  7.6:1 */
-  --text-3: #6f7168;    /*  5.0:1 */
+  --text: #121210;      /* 16.7 / 18.8 / 16.1 */
+  --text-2: #53554c;    /*  6.7 /  7.6 /  6.5 */
+  --text-3: #66685f;    /*  5.0 /  5.7 /  4.9 */
 
   --accent: var(--acid);
   --accent-ink: #12140a;
@@ -157,7 +160,10 @@
   --success-text: #157347;
   --warn: #b7791f;
   --warn-text: #8a5a10;
-  --danger: #d64535;
+  /* Le rouge clair d'origine ne dépassait 4,5:1 avec aucune encre — ni noire
+     (4,32) ni blanche (4,41). Assombri pour tenir 5,6:1 en blanc. */
+  --danger: #c2321d;
+  --danger-ink: #ffffff;   /* 5.6:1 sur --danger */
   --danger-text: #b3291a;
   --info: #0b6f95;
 

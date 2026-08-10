@@ -56,7 +56,7 @@
 
 .editor-row {
   display: grid;
-  grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+  grid-template-columns: var(--tap-min) minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) 0;
@@ -71,17 +71,22 @@
   font-size: var(--text-2xs);
   color: var(--text-3);
 }
+/* Cibles pleines : deux flèches de 28 px collées l'une à l'autre, c'est
+   l'exercice du dessus qu'on déplace une fois sur trois. La ligne est plus
+   haute, mais on est dans un écran d'édition — on y scrolle, on n'y court pas. */
 .editor-order button {
   display: grid;
   place-items: center;
-  width: 1.75rem;
-  height: 1.5rem;
+  width: var(--tap-min);
+  height: var(--tap-min);
   border-radius: var(--radius-xs);
+  /* Un fond, sinon deux chevrons flottants ne se lisent pas comme des boutons. */
+  background: var(--surface-2);
   color: var(--text-3);
   transition: color var(--dur), background var(--dur);
 }
-.editor-order button:hover:not(:disabled) { color: var(--text); background: var(--surface-2); }
-.editor-order button:disabled { opacity: 0.3; cursor: not-allowed; }
+.editor-order button:hover:not(:disabled) { color: var(--text); background: var(--surface-3); }
+.editor-order button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .editor-row-main {
   display: grid;

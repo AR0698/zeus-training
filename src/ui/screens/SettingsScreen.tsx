@@ -109,8 +109,8 @@ export function SettingsScreen({
           onChange={(autoRest) => onUpdate({ autoRest })}
         />
 
-        <div className="field">
-          <span className="field-label">Repos par défaut</span>
+        <div className="field" role="group" aria-labelledby="default-rest-label">
+          <span className="field-label" id="default-rest-label">Repos par défaut</span>
           <div className="chip-row">
             {REST_CHOICES.map((seconds) => (
               <button
