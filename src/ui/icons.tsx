@@ -237,6 +237,48 @@ export const IconClock = (props: IconProps) => (
   </Icon>
 );
 
+export const IconArrowLeft = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M20 12H5" />
+    <path d="M11 6l-6 6 6 6" />
+  </Icon>
+);
+
+export const IconArrowUp = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M12 19V5" />
+    <path d="M6 11l6-6 6 6" />
+  </Icon>
+);
+
+export const IconArrowDown = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M12 5v14" />
+    <path d="M6 13l6 6 6-6" />
+  </Icon>
+);
+
+export const IconPencil = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M4 20h4L19.5 8.5a2.12 2.12 0 0 0-3-3L5 17v3Z" />
+    <path d="M14.5 6.5l3 3" />
+  </Icon>
+);
+
+export const IconCopy = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="9" y="9" width="11" height="11" rx="2" />
+    <path d="M15 5.5A1.5 1.5 0 0 0 13.5 4H6a2 2 0 0 0-2 2v7.5A1.5 1.5 0 0 0 5.5 15" />
+  </Icon>
+);
+
+export const IconSearch = (props: IconProps) => (
+  <Icon {...props}>
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="M16 16l4 4" />
+  </Icon>
+);
+
 export const IconWifiOff = (props: IconProps) => (
   <Icon {...props}>
     <path d="M3 4l18 18" />

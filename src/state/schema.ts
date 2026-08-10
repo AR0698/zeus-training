@@ -100,7 +100,10 @@ function parseExercise(raw: unknown, template: ExerciseTemplate | null, issues: 
 }
 
 function parsePrograms(raw: unknown, issues: Issues): Program[] {
-  if (!Array.isArray(raw) || raw.length === 0) {
+  // An empty array is a deliberate choice — the user deleted every program.
+  // Restoring the defaults there would silently undo their edit.
+  if (Array.isArray(raw) && raw.length === 0) return [];
+  if (!Array.isArray(raw)) {
     if (raw !== undefined) issues.push("Programmes illisibles — programmes par défaut restaurés.");
     return structuredClone(SEED_PROGRAMS);
   }
@@ -116,11 +119,11 @@ function parsePrograms(raw: unknown, issues: Issues): Program[] {
       .map((exercise, index) => parseExercise(exercise, seed?.exercises[index] ?? null, issues))
       .filter((exercise): exercise is ExerciseTemplate => exercise !== null);
 
-    if (exercises.length === 0) {
-      if (seed) {
-        programs.push(structuredClone(seed));
-        issues.push(`Programme « ${seed.name} » restauré depuis les valeurs par défaut.`);
-      }
+    // A seeded program with no readable exercise is corruption; a user-made one
+    // is simply a program still being written. Only the first gets restored.
+    if (exercises.length === 0 && seed && rawExercises.length > 0) {
+      programs.push(structuredClone(seed));
+      issues.push(`Programme « ${seed.name} » restauré depuis les valeurs par défaut.`);
       continue;
     }
 
@@ -135,7 +138,7 @@ function parsePrograms(raw: unknown, issues: Issues): Program[] {
     });
   }
 
-  if (programs.length === 0) {
+  if (programs.length === 0 && raw.length > 0) {
     issues.push("Aucun programme valide — programmes par défaut restaurés.");
     return structuredClone(SEED_PROGRAMS);
   }

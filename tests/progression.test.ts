@@ -141,8 +141,13 @@ test("progression is written back by exercise id, not by position", () => {
 });
 
 test("the rotation walks the Upper/Lower cycle and wraps", () => {
-  assert.equal(nextProgram(SEED_PROGRAMS, null).id, "upper-a");
-  assert.equal(nextProgram(SEED_PROGRAMS, "upper-a").id, "lower-a");
-  assert.equal(nextProgram(SEED_PROGRAMS, "lower-b").id, "upper-a");
-  assert.equal(nextProgram(SEED_PROGRAMS, "inconnu").id, "upper-a");
+  assert.equal(nextProgram(SEED_PROGRAMS, null)?.id, "upper-a");
+  assert.equal(nextProgram(SEED_PROGRAMS, "upper-a")?.id, "lower-a");
+  assert.equal(nextProgram(SEED_PROGRAMS, "lower-b")?.id, "upper-a");
+  assert.equal(nextProgram(SEED_PROGRAMS, "inconnu")?.id, "upper-a");
+});
+
+test("an empty library yields no recommendation instead of throwing", () => {
+  assert.equal(nextProgram([], null), null);
+  assert.equal(nextProgram([], "upper-a"), null);
 });

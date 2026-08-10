@@ -7,6 +7,7 @@ import "./styles/tokens.css";
 import "./styles/base.css";
 import "./styles/components.css";
 import "./styles/screens.css";
+import "./styles/editor.css";
 
 const container = document.getElementById("root");
 if (!container) throw new Error("Élément #root introuvable");

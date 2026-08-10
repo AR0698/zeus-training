@@ -1,151 +1,111 @@
-import { formatLoad, formatNumber, formatRepRange, unitLabel } from "../../domain/format.ts";
-import { weightStep } from "../../domain/progression.ts";
+import { formatNumber, formatRepRange, unitLabel } from "../../domain/format.ts";
 import type { AppState, Program } from "../../domain/types.ts";
-import { IconArrowRight, IconSettings } from "../icons.tsx";
-import { Sheet } from "../components/Sheet.tsx";
-import { Stepper } from "../components/Stepper.tsx";
+import { IconArrowRight, IconPencil, IconPlus } from "../icons.tsx";
 import { detailFromTemplate, type ExerciseDetail } from "../types.ts";
 
 export function ProgramsScreen({
   state,
   onStart,
   onEdit,
+  onCreate,
   onOpenDetail,
 }: {
   state: AppState;
   onStart: (program: Program) => void;
   onEdit: (programId: string) => void;
+  onCreate: () => void;
   onOpenDetail: (detail: ExerciseDetail) => void;
 }) {
   return (
     <>
       <header className="screen-head">
         <span className="eyebrow">Programmes</span>
-        <h1 className="display">Ton cycle Upper / Lower</h1>
+        <h1 className="display">Ton cycle, à ta façon</h1>
         <p className="lead">
-          Quatre séances qui tournent en boucle. Les cibles se recalculent seules après chaque
-          séance, et restent modifiables à la main.
+          Les séances tournent en boucle dans l&apos;ordre de cette liste. Ajoute, retire et
+          réordonne les exercices ; les cibles se recalculent seules après chaque séance.
         </p>
       </header>
 
-      <div className="program-list">
-        {state.programs.map((program, index) => (
-          <article key={program.id} className={`card program-card accent-${program.accent}`}>
-            <span className="program-card-bar" aria-hidden="true" />
-            <div className="program-card-head">
-              <span className="program-order tabular">{String(index + 1).padStart(2, "0")}</span>
-              <div>
-                <h2>{program.name}</h2>
-                <p className="muted">
-                  {program.focus} · {program.estimatedMinutes} min
-                </p>
+      {state.programs.length === 0 ? (
+        <div className="card empty-state">
+          <IconPlus size={26} />
+          <h2>Aucune séance pour l&apos;instant</h2>
+          <p className="lead">
+            Crée ta première séance : nomme-la, ajoute des exercices depuis le catalogue, et elle
+            apparaîtra sur l&apos;accueil.
+          </p>
+          <button type="button" className="button button-accent" onClick={onCreate}>
+            <IconPlus size={18} />
+            Créer une séance
+          </button>
+        </div>
+      ) : (
+        <div className="program-list">
+          {state.programs.map((program, index) => (
+            <article key={program.id} className={`card program-card accent-${program.accent}`}>
+              <span className="program-card-bar" aria-hidden="true" />
+              <div className="program-card-head">
+                <span className="program-order tabular">{String(index + 1).padStart(2, "0")}</span>
+                <div>
+                  <h2>{program.name}</h2>
+                  <p className="muted">
+                    {program.focus ? `${program.focus} · ` : ""}
+                    {program.estimatedMinutes} min
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="icon-button"
+                  onClick={() => onEdit(program.id)}
+                  aria-label={`Modifier ${program.name}`}
+                >
+                  <IconPencil size={17} />
+                </button>
               </div>
+
+              {program.exercises.length === 0 ? (
+                <p className="program-empty">
+                  Séance vide — ouvre-la pour ajouter des exercices.
+                </p>
+              ) : (
+                <ul className="program-exercises">
+                  {program.exercises.map((exercise) => (
+                    <li key={exercise.id}>
+                      <button type="button" onClick={() => onOpenDetail(detailFromTemplate(exercise))}>
+                        <span className="program-exercise-name">{exercise.shortName}</span>
+                        <span className="program-exercise-reps tabular">
+                          {exercise.sets}×{formatRepRange(exercise.repMin, exercise.repMax)}
+                        </span>
+                        <strong className="program-exercise-load tabular">
+                          {exercise.targetWeights.map(formatNumber).join(" · ")}{" "}
+                          {unitLabel(exercise.unit)}
+                        </strong>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
               <button
                 type="button"
-                className="icon-button"
-                onClick={() => onEdit(program.id)}
-                aria-label={`Modifier les charges de ${program.name}`}
+                className="button button-solid"
+                onClick={() => onStart(program)}
+                disabled={program.exercises.length === 0}
               >
-                <IconSettings size={18} />
+                Démarrer maintenant
+                <IconArrowRight size={18} />
               </button>
-            </div>
+            </article>
+          ))}
 
-            <ul className="program-exercises">
-              {program.exercises.map((exercise) => (
-                <li key={exercise.id}>
-                  <button type="button" onClick={() => onOpenDetail(detailFromTemplate(exercise))}>
-                    <span className="program-exercise-name">{exercise.shortName}</span>
-                    <span className="program-exercise-reps tabular">
-                      {exercise.sets}×{formatRepRange(exercise.repMin, exercise.repMax)}
-                    </span>
-                    <strong className="program-exercise-load tabular">
-                      {exercise.targetWeights.map(formatNumber).join(" · ")}{" "}
-                      {unitLabel(exercise.unit)}
-                    </strong>
-                  </button>
-                </li>
-              ))}
-            </ul>
-
-            <button type="button" className="button button-solid" onClick={() => onStart(program)}>
-              Démarrer maintenant
-              <IconArrowRight size={18} />
-            </button>
-          </article>
-        ))}
-      </div>
-    </>
-  );
-}
-
-export function EditProgramSheet({
-  program,
-  onClose,
-  onAdjust,
-  onSet,
-}: {
-  program: Program | null;
-  onClose: () => void;
-  onAdjust: (exerciseId: string, setIndex: number, delta: number) => void;
-  onSet: (exerciseId: string, setIndex: number, value: number) => void;
-}) {
-  return (
-    <Sheet
-      open={program !== null}
-      onClose={onClose}
-      size="wide"
-      label={program ? `Modifier ${program.name}` : "Modifier le programme"}
-    >
-      {program && (
-        <>
-          <span className="kicker">Charges cibles</span>
-          <h2 className="sheet-title">{program.name}</h2>
-          <p className="lead">
-            Ce sont les charges proposées au démarrage. Tu pourras encore les corriger série par
-            série pendant la séance.
-          </p>
-
-          <div className="edit-list">
-            {program.exercises.map((exercise) => (
-              <section key={exercise.id} className="edit-exercise">
-                <header>
-                  <strong>{exercise.shortName}</strong>
-                  <span className="muted tabular">
-                    {exercise.sets} × {formatRepRange(exercise.repMin, exercise.repMax)}
-                    {exercise.unit === "sec" ? " s" : ""}
-                  </span>
-                </header>
-                <div className="edit-sets">
-                  {exercise.targetWeights.map((weight, index) => (
-                    <div className="edit-set" key={index}>
-                      <span className="edit-set-index">Série {index + 1}</span>
-                      <Stepper
-                        tone="quiet"
-                        value={weight}
-                        unit={unitLabel(exercise.unit)}
-                        step={weightStep(exercise.unit, exercise.group, weight)}
-                        label={`${exercise.shortName} série ${index + 1}`}
-                        onAdjust={(delta) => onAdjust(exercise.id, index, delta)}
-                        onSet={(value) => onSet(exercise.id, index, value)}
-                      />
-                      {exercise.lastWeights[index] !== undefined &&
-                        exercise.lastWeights[index] !== weight && (
-                          <span className="edit-set-last">
-                            dernier : {formatLoad(exercise.lastWeights[index], exercise.unit)}
-                          </span>
-                        )}
-                    </div>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-
-          <button type="button" className="button button-accent" onClick={onClose}>
-            Terminé
+          <button type="button" className="card program-add" onClick={onCreate}>
+            <IconPlus size={22} />
+            <strong>Nouvelle séance</strong>
+            <small>Repartir d&apos;une page blanche ou dupliquer une séance existante</small>
           </button>
-        </>
+        </div>
       )}
-    </Sheet>
+    </>
   );
 }

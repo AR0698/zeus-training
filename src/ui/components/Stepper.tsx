@@ -39,6 +39,15 @@ export function Stepper({
   const holdInterval = useRef<number | null>(null);
   const pointerHandled = useRef(false);
 
+  // The repeat interval outlives the render that started it. Calling the prop
+  // captured back then would keep re-applying the delta to the *original*
+  // value — a hold would add one increment and then do nothing. The ref always
+  // points at the current handler.
+  const adjustRef = useRef(onAdjust);
+  useEffect(() => {
+    adjustRef.current = onAdjust;
+  }, [onAdjust]);
+
   const stopHold = useCallback(() => {
     if (holdTimer.current !== null) window.clearTimeout(holdTimer.current);
     if (holdInterval.current !== null) window.clearInterval(holdInterval.current);
@@ -50,10 +59,13 @@ export function Stepper({
 
   const startHold = (delta: number) => {
     pointerHandled.current = true;
-    onAdjust(delta);
+    adjustRef.current(delta);
     stopHold();
     holdTimer.current = window.setTimeout(() => {
-      holdInterval.current = window.setInterval(() => onAdjust(delta), HOLD_REPEAT_MS);
+      holdInterval.current = window.setInterval(
+        () => adjustRef.current(delta),
+        HOLD_REPEAT_MS,
+      );
     }, HOLD_DELAY_MS);
   };
 
@@ -63,7 +75,7 @@ export function Stepper({
       pointerHandled.current = false;
       return;
     }
-    onAdjust(delta);
+    adjustRef.current(delta);
   };
 
   const commitDraft = () => {

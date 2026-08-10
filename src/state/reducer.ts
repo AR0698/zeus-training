@@ -1,8 +1,9 @@
+import { ACCENTS, makeEmptyProgram, patchExercise } from "../domain/library.ts";
 import { clampLoad, applySessionToPrograms, weightStep } from "../domain/progression.ts";
 import { createSession, beatsRecord, finishSession } from "../domain/session.ts";
 import { createInitialState } from "../domain/seed.ts";
 import { lastSessionDate } from "../domain/stats.ts";
-import type { AppState, Session, SessionExercise } from "../domain/types.ts";
+import type { AppState, Program, Session, SessionExercise } from "../domain/types.ts";
 import type { Action } from "./actions.ts";
 
 /** Keep the log readable; a year of 4 sessions a week is ~200 entries. */
@@ -72,6 +73,131 @@ export function reducer(state: AppState, action: Action): AppState {
             }),
           };
         }),
+      };
+    }
+
+    case "program/create": {
+      const accent = ACCENTS[state.programs.length % ACCENTS.length] ?? "acid";
+      return { ...state, programs: [...state.programs, makeEmptyProgram(action.id, accent)] };
+    }
+
+    case "program/duplicate": {
+      const source = state.programs.find((program) => program.id === action.programId);
+      if (!source) return state;
+      const copy: Program = {
+        ...structuredClone(source),
+        id: action.id,
+        name: `${source.name} (copie)`,
+      };
+      const index = state.programs.indexOf(source);
+      const programs = [...state.programs];
+      programs.splice(index + 1, 0, copy);
+      return { ...state, programs };
+    }
+
+    case "program/delete": {
+      const programs = state.programs.filter((program) => program.id !== action.programId);
+      if (programs.length === state.programs.length) return state;
+      return {
+        ...state,
+        programs,
+        // The rotation must not point at a program that no longer exists.
+        lastCompletedProgramId:
+          state.lastCompletedProgramId === action.programId ? null : state.lastCompletedProgramId,
+      };
+    }
+
+    case "program/move": {
+      const index = state.programs.findIndex((program) => program.id === action.programId);
+      const target = index + action.direction;
+      if (index === -1 || target < 0 || target >= state.programs.length) return state;
+      const programs = [...state.programs];
+      const [moved] = programs.splice(index, 1);
+      if (!moved) return state;
+      programs.splice(target, 0, moved);
+      return { ...state, programs };
+    }
+
+    case "program/update": {
+      return {
+        ...state,
+        programs: state.programs.map((program) => {
+          if (program.id !== action.programId) return program;
+          const patch = action.patch;
+          return {
+            ...program,
+            ...patch,
+            name: (patch.name ?? program.name).trim() || "Séance sans titre",
+            estimatedMinutes: Math.max(
+              5,
+              Math.min(240, Math.round(patch.estimatedMinutes ?? program.estimatedMinutes)),
+            ),
+          };
+        }),
+      };
+    }
+
+    case "program/addExercise": {
+      return {
+        ...state,
+        programs: state.programs.map((program) =>
+          program.id === action.programId
+            ? { ...program, exercises: [...program.exercises, action.exercise] }
+            : program,
+        ),
+      };
+    }
+
+    case "program/removeExercise": {
+      return {
+        ...state,
+        programs: state.programs.map((program) =>
+          program.id === action.programId
+            ? {
+                ...program,
+                exercises: program.exercises.filter(
+                  (exercise) => exercise.id !== action.exerciseId,
+                ),
+              }
+            : program,
+        ),
+      };
+    }
+
+    case "program/moveExercise": {
+      return {
+        ...state,
+        programs: state.programs.map((program) => {
+          if (program.id !== action.programId) return program;
+          const index = program.exercises.findIndex(
+            (exercise) => exercise.id === action.exerciseId,
+          );
+          const target = index + action.direction;
+          if (index === -1 || target < 0 || target >= program.exercises.length) return program;
+          const exercises = [...program.exercises];
+          const [moved] = exercises.splice(index, 1);
+          if (!moved) return program;
+          exercises.splice(target, 0, moved);
+          return { ...program, exercises };
+        }),
+      };
+    }
+
+    case "program/updateExercise": {
+      return {
+        ...state,
+        programs: state.programs.map((program) =>
+          program.id === action.programId
+            ? {
+                ...program,
+                exercises: program.exercises.map((exercise) =>
+                  exercise.id === action.exerciseId
+                    ? patchExercise(exercise, action.patch)
+                    : exercise,
+                ),
+              }
+            : program,
+        ),
       };
     }
 

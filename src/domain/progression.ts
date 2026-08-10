@@ -155,10 +155,17 @@ export function applySessionToPrograms(programs: Program[], session: Session): P
   });
 }
 
-/** The next program in the Upper/Lower rotation. */
-export function nextProgram(programs: Program[], lastCompletedProgramId: string | null): Program {
+/**
+ * The next program in the rotation, or null when the user has deleted them all.
+ * Returning null rather than throwing keeps an empty library a normal state the
+ * UI can render, not a crash.
+ */
+export function nextProgram(
+  programs: Program[],
+  lastCompletedProgramId: string | null,
+): Program | null {
   const fallback = programs[0];
-  if (!fallback) throw new Error("Aucun programme disponible");
+  if (!fallback) return null;
   if (lastCompletedProgramId === null) return fallback;
   const index = programs.findIndex((program) => program.id === lastCompletedProgramId);
   if (index === -1) return fallback;

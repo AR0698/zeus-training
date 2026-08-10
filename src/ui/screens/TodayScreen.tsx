@@ -5,6 +5,7 @@ import type { AppState, Program } from "../../domain/types.ts";
 import {
   IconAlert,
   IconArrowRight,
+  IconDumbbell,
   IconChevronRight,
   IconClock,
   IconFlame,
@@ -36,7 +37,7 @@ export function TodayScreen({
   const lastDate = lastSessionDate(state.history);
   const restDays = lastDate === null ? null : daysBetween(lastDate, now);
   const layoff = restDays !== null && restDays >= LAYOFF_DAYS;
-  const others = state.programs.filter((program) => program.id !== recommended.id);
+  const others = state.programs.filter((program) => program.id !== recommended?.id);
   const firstName = state.settings.displayName.trim().split(" ")[0] ?? "";
 
   return (
@@ -61,6 +62,20 @@ export function TodayScreen({
         </div>
       )}
 
+      {recommended === null ? (
+        <section className="card empty-state">
+          <IconDumbbell size={26} />
+          <h2>Aucune séance dans ton cycle</h2>
+          <p className="lead">
+            Crée ta première séance depuis l&apos;onglet Programmes : nomme-la, ajoute des
+            exercices depuis le catalogue, et elle apparaîtra ici.
+          </p>
+          <button type="button" className="button button-accent" onClick={onOpenPrograms}>
+            Créer une séance
+            <IconArrowRight size={18} />
+          </button>
+        </section>
+      ) : (
       <section className={`hero-card accent-${recommended.accent}`} aria-labelledby="hero-title">
         <div className="hero-top">
           <span className="hero-chip">Recommandé</span>
@@ -90,12 +105,18 @@ export function TodayScreen({
           ))}
         </ul>
 
-        <button type="button" className="button button-accent button-xl" onClick={() => onStart(recommended)}>
-          Commencer la séance
+        <button
+          type="button"
+          className="button button-accent button-xl"
+          onClick={() => onStart(recommended)}
+          disabled={recommended.exercises.length === 0}
+        >
+          {recommended.exercises.length === 0 ? "Séance vide" : "Commencer la séance"}
           <IconArrowRight size={20} />
         </button>
-        <p className="hero-warmup">Échauffement · {recommended.warmup}</p>
+        {recommended.warmup && <p className="hero-warmup">Échauffement · {recommended.warmup}</p>}
       </section>
+      )}
 
       <section className="insight-grid">
         <article className="card insight">

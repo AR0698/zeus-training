@@ -8,10 +8,12 @@ Application web statique, installable sur l'écran d'accueil, **sans compte, san
 
 ## Ce que fait l'application
 
+L'application est livrée avec un cycle Upper/Lower, mais **rien n'y est figé** : tout le contenu se modifie depuis l'app, sans toucher au code.
+
 - **Aujourd'hui** — la prochaine séance du cycle Upper/Lower, calculée depuis l'historique, démarrable en un geste.
 - **Mode séance** — validation série par série, correction rapide de la charge et des répétitions, minuteur de repos, remplacement d'un exercice quand la machine est prise, exercice passé, arrêt et reprise plus tard. Une séance partielle est enregistrée comme une séance normale.
 - **Double progression prudente** — la cible ne monte que si toutes les séries ont atteint le haut de la fourchette sans être difficiles ; elle baisse de 10 % si une série est passée sous la fourchette ; elle est allégée de 10 % après trois semaines d'arrêt.
-- **Programmes** — quatre séances modifiables, charges cibles ajustables à la main.
+- **Programmes** — éditeur complet : créer, renommer, dupliquer et supprimer une séance, ajouter des exercices depuis un catalogue de 37 mouvements ou en créer sur mesure, les réordonner, régler séries, fourchette de répétitions, charges, repos, consignes et équivalents. Les quatre séances Upper/Lower fournies ne sont qu'un point de départ.
 - **Progrès** — volume par séance, records personnels, séries en cours, historique complet. Aucun chiffre n'est inventé : sans séance, l'écran le dit.
 - **Réglages** — thème, repos par défaut, vibrations, écran maintenu allumé, export / import de sauvegarde.
 

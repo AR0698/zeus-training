@@ -1,4 +1,4 @@
-import type { AppState, Effort, Program, Settings } from "../domain/types.ts";
+import type { AppState, Effort, ExerciseTemplate, Program, Settings } from "../domain/types.ts";
 
 /**
  * Every state change in the app is one of these actions.
@@ -12,6 +12,24 @@ export type Action =
   | { type: "settings/update"; patch: Partial<Settings> }
   | { type: "program/setTarget"; programId: string; exerciseId: string; setIndex: number; value: number }
   | { type: "program/adjustTarget"; programId: string; exerciseId: string; setIndex: number; delta: number }
+  | { type: "program/create"; id: string }
+  | { type: "program/duplicate"; programId: string; id: string }
+  | { type: "program/delete"; programId: string }
+  | { type: "program/move"; programId: string; direction: -1 | 1 }
+  | {
+      type: "program/update";
+      programId: string;
+      patch: Partial<Pick<Program, "name" | "focus" | "warmup" | "accent" | "estimatedMinutes">>;
+    }
+  | { type: "program/addExercise"; programId: string; exercise: ExerciseTemplate }
+  | { type: "program/removeExercise"; programId: string; exerciseId: string }
+  | { type: "program/moveExercise"; programId: string; exerciseId: string; direction: -1 | 1 }
+  | {
+      type: "program/updateExercise";
+      programId: string;
+      exerciseId: string;
+      patch: Partial<ExerciseTemplate>;
+    }
   | { type: "session/start"; program: Program; now: number; id: string }
   | { type: "session/abandon" }
   | { type: "session/finish"; now: number }
@@ -34,4 +52,6 @@ export const UNDOABLE: ReadonlySet<Action["type"]> = new Set([
   "session/removeSet",
   "state/reset",
   "state/replace",
+  "program/delete",
+  "program/removeExercise",
 ]);

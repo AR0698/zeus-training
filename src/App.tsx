@@ -1,8 +1,19 @@
 import { useCallback, useMemo, useState } from "react";
 import { formatLoad } from "./domain/format.ts";
+import {
+  makeCustomExercise,
+  slugify,
+  uniqueExerciseId,
+} from "./domain/library.ts";
 import { decideProgression } from "./domain/progression.ts";
 import { isSessionStale } from "./domain/session.ts";
-import type { AppState, Effort, Program, SessionExercise } from "./domain/types.ts";
+import type {
+  AppState,
+  Effort,
+  ExerciseTemplate,
+  Program,
+  SessionExercise,
+} from "./domain/types.ts";
 import { useHaptics } from "./hooks/useHaptics.ts";
 import { useNow } from "./hooks/useNow.ts";
 import { useRestTimer } from "./hooks/useRestTimer.ts";
@@ -22,7 +33,11 @@ import {
   IconUpload,
   IconWifiOff,
 } from "./ui/icons.tsx";
-import { EditProgramSheet, ProgramsScreen } from "./ui/screens/ProgramsScreen.tsx";
+import {
+  ProgramEditorScreen,
+  type ProgramEditorHandlers,
+} from "./ui/screens/ProgramEditorScreen.tsx";
+import { ProgramsScreen } from "./ui/screens/ProgramsScreen.tsx";
 import { ProgressScreen } from "./ui/screens/ProgressScreen.tsx";
 import { SessionScreen, type SessionHandlers } from "./ui/screens/SessionScreen.tsx";
 import { SettingsScreen } from "./ui/screens/SettingsScreen.tsx";
@@ -169,6 +184,75 @@ export function App() {
   }
 
   const editedProgram = state.programs.find((program) => program.id === editProgramId) ?? null;
+  const editedIndex = state.programs.findIndex((program) => program.id === editProgramId);
+
+  function makeEditorHandlers(program: Program): ProgramEditorHandlers {
+    const addTemplate = (template: ExerciseTemplate): string => {
+      const id = uniqueExerciseId(program, template.id);
+      dispatch({
+        type: "program/addExercise",
+        programId: program.id,
+        exercise: { ...structuredClone(template), id },
+      });
+      haptics.tap();
+      return id;
+    };
+
+    return {
+      update: (patch) => dispatch({ type: "program/update", programId: program.id, patch }),
+      moveProgram: (direction) =>
+        dispatch({ type: "program/move", programId: program.id, direction }),
+      duplicate: () => {
+        const id = newId("program");
+        dispatch({ type: "program/duplicate", programId: program.id, id });
+        setEditProgramId(id);
+        show({ message: `« ${program.name} » dupliquée`, tone: "success" });
+      },
+      remove: () => {
+        dispatch({ type: "program/delete", programId: program.id });
+        setEditProgramId(null);
+        show({
+          message: `« ${program.name} » supprimée`,
+          tone: "warn",
+          action: { label: "Annuler", run: undo },
+        });
+      },
+      addExercise: addTemplate,
+      createCustomExercise: () => {
+        const id = uniqueExerciseId(program, `perso-${slugify(String(state.programs.length))}`);
+        dispatch({
+          type: "program/addExercise",
+          programId: program.id,
+          exercise: makeCustomExercise(id),
+        });
+        return id;
+      },
+      removeExercise: (exerciseId) => {
+        const exercise = program.exercises.find((item) => item.id === exerciseId);
+        dispatch({ type: "program/removeExercise", programId: program.id, exerciseId });
+        show({
+          message: `${exercise?.shortName ?? "Exercice"} retiré`,
+          action: { label: "Annuler", run: undo },
+        });
+      },
+      moveExercise: (exerciseId, direction) =>
+        dispatch({ type: "program/moveExercise", programId: program.id, exerciseId, direction }),
+      patchExercise: (exerciseId, patch) =>
+        dispatch({ type: "program/updateExercise", programId: program.id, exerciseId, patch }),
+      start: () => {
+        setEditProgramId(null);
+        startSession(program);
+      },
+    };
+  }
+
+  function createProgram() {
+    const id = newId("program");
+    dispatch({ type: "program/create", id });
+    setEditProgramId(id);
+    setTab("programs");
+  }
+
   const staleSession =
     state.session !== null && !staleDismissed && isSessionStale(state.session, now);
 
@@ -260,7 +344,17 @@ export function App() {
           </div>
         )}
 
-        {state.history.length === 0 && tab === "today" && (
+        {editedProgram && (
+          <ProgramEditorScreen
+            program={editedProgram}
+            index={editedIndex}
+            total={state.programs.length}
+            onBack={() => setEditProgramId(null)}
+            handlers={makeEditorHandlers(editedProgram)}
+          />
+        )}
+
+        {!editedProgram && state.history.length === 0 && tab === "today" && (
           <div className="banner banner-accent">
             <IconUpload size={18} />
             <div>
@@ -275,7 +369,7 @@ export function App() {
           </div>
         )}
 
-        {tab === "today" && (
+        {!editedProgram && tab === "today" && (
           <TodayScreen
             state={state}
             now={now}
@@ -284,16 +378,17 @@ export function App() {
             onOpenPrograms={() => setTab("programs")}
           />
         )}
-        {tab === "programs" && (
+        {!editedProgram && tab === "programs" && (
           <ProgramsScreen
             state={state}
             onStart={startSession}
             onEdit={setEditProgramId}
+            onCreate={createProgram}
             onOpenDetail={setDetail}
           />
         )}
-        {tab === "progress" && <ProgressScreen state={state} now={now} />}
-        {tab === "settings" && (
+        {!editedProgram && tab === "progress" && <ProgressScreen state={state} now={now} />}
+        {!editedProgram && tab === "settings" && (
           <SettingsScreen
             state={state}
             onUpdate={(patch) => dispatch({ type: "settings/update", patch })}
@@ -340,18 +435,6 @@ export function App() {
       </nav>
 
       <ExerciseSheet detail={detail} onClose={() => setDetail(null)} />
-      <EditProgramSheet
-        program={editedProgram}
-        onClose={() => setEditProgramId(null)}
-        onAdjust={(exerciseId, setIndex, delta) => {
-          if (!editProgramId) return;
-          dispatch({ type: "program/adjustTarget", programId: editProgramId, exerciseId, setIndex, delta });
-        }}
-        onSet={(exerciseId, setIndex, value) => {
-          if (!editProgramId) return;
-          dispatch({ type: "program/setTarget", programId: editProgramId, exerciseId, setIndex, value });
-        }}
-      />
 
       <Sheet
         open={staleSession}

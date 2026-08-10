@@ -16,7 +16,7 @@ storage/     ← IndexedDB, export/import (le seul I/O)
 ui/          ← React : ne calcule rien, affiche et dispatche
 ```
 
-Rien ne pointe vers le bas. `domain/` ignore l'existence de React, du navigateur, du stockage et même de l'horloge. C'est ce qui rend les règles d'entraînement testables sans navigateur, et c'est pourquoi 31 tests tournent en 100 ms.
+Rien ne pointe vers le bas. `domain/` ignore l'existence de React, du navigateur, du stockage et même de l'horloge. C'est ce qui rend les règles d'entraînement testables sans navigateur, et c'est pourquoi 47 tests tournent en moins de 200 ms.
 
 **Bug empêché :** une règle métier qui change de comportement selon l'écran où elle est appelée.
 
@@ -116,9 +116,22 @@ C'est une correction directe de la version précédente, qui affichait « 3 séa
 | Multi-appareils | non supporté par construction : une seule copie locale, export manuel |
 | Deux onglets ouverts en parallèle | le dernier qui écrit gagne ; pas de fusion |
 | Polices Google | mises en cache par le service worker après la première visite ; sans réseau au tout premier chargement, l'app tombe sur les polices système |
-| Programmes | les exercices ne sont ni ajoutables ni réordonnables depuis l'interface — seules les charges cibles sont modifiables |
+| Programmes | entièrement éditables ; la seule limite est qu'un exercice ne peut pas être déplacé d'une séance à une autre (le dupliquer puis le retirer revient au même) |
 | RPE / RIR, supersets, échauffements | non modélisés ; les supersets bras existent comme deux exercices consécutifs |
 | Historique | plafonné à 400 séances (~2 ans à 4 séances/semaine) |
+
+## 9. L'éditeur ne peut pas produire un état invalide
+
+Un éditeur ouvert à tous est le moyen le plus direct de fabriquer des données incohérentes : trois séries mais quatre charges, un maximum de répétitions sous le minimum, un nom vide, un programme sans exercice.
+
+La réponse n'est pas de valider dans les formulaires — il y en a trop, et chacun oublierait un cas. Toute modification d'exercice passe par `patchExercise()` dans `domain/library.ts`, qui **répare** systématiquement : les tableaux de charges sont redimensionnés sur le nombre de séries, `repMax` remonte à `repMin`, un nom vide retombe sur l'ancien, le repos est borné, les équivalents vides sont retirés. L'interface, elle, n'a aucune règle à connaître.
+
+Deux conséquences voulues :
+
+- **Ajouter deux fois le même mouvement est légitime** (pré-fatigue, série de récupération). `uniqueExerciseId()` suffixe l'identifiant pour que les deux gardent des séries distinctes.
+- **Une séance vide est un état normal**, pas une corruption : c'est une séance en cours d'écriture. Elle ne peut simplement pas être démarrée, et `parseAppState` ne la remplace pas par les valeurs par défaut au rechargement — sinon supprimer un exercice se déferait tout seul.
+
+`nextProgram()` renvoie `null` quand il ne reste aucune séance, au lieu de lever une exception : une bibliothèque vide est un écran à dessiner, pas un plantage.
 
 ## Ajouter une fonctionnalité sans casser le reste
 
