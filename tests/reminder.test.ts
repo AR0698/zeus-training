@@ -93,6 +93,20 @@ test("l'âge de la sauvegarde s'affiche honnêtement", () => {
   assert.equal(daysSinceBackup(exported, NOW - days(4)), 0, "jamais de nombre négatif");
 });
 
+test("le décompte part de l'accueil passé, pas de l'enregistrement écrit", () => {
+  // Installation ouverte il y a trois mois, laissée sur l'écran de bienvenue,
+  // et reprise aujourd'hui. Ancrer sur `createdAt` afficherait le rappel de
+  // sauvegarde dans la seconde suivant le choix des séances.
+  const state: AppState = {
+    ...createInitialState(NOW - days(90)),
+    onboardedAt: NOW,
+    programs: examplePrograms(),
+  };
+  assert.equal(shouldPromptBackup(state, NOW), false);
+  assert.equal(shouldPromptBackup(state, NOW + days(BACKUP_INTERVAL_DAYS - 1)), false);
+  assert.equal(shouldPromptBackup(state, NOW + days(BACKUP_INTERVAL_DAYS)), true);
+});
+
 test("un programme composé sans aucune séance vaut déjà la peine d'être sauvegardé", () => {
   const state: AppState = {
     ...createInitialState(NOW - days(40)),

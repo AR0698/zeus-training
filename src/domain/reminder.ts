@@ -20,9 +20,19 @@ export const BACKUP_INTERVAL_DAYS = 30;
 /** Report quand on répond « plus tard ». */
 export const BACKUP_SNOOZE_DAYS = 7;
 
-/** Point de départ du décompte : dernière sauvegarde, ou premier lancement. */
+/**
+ * Point de départ du décompte : la dernière sauvegarde, sinon le moment où
+ * l'application est devenue utilisable.
+ *
+ * `createdAt` date le premier enregistrement écrit, pas le premier usage. Une
+ * installation ouverte puis laissée sur l'écran de bienvenue pendant deux mois
+ * déclencherait le rappel dans la seconde suivant le choix des séances — juste
+ * après l'écran qui vient d'expliquer les sauvegardes, et sans rien à sauver.
+ * `onboardedAt` est toujours renseigné ici : `shouldPromptBackup` renonce plus
+ * haut quand il vaut `null`.
+ */
 function lastBackupAnchor(state: AppState): number {
-  return state.lastBackupAt ?? state.createdAt;
+  return state.lastBackupAt ?? state.onboardedAt ?? state.createdAt;
 }
 
 export function shouldPromptBackup(state: AppState, now: number): boolean {

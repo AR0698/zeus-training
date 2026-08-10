@@ -1,102 +1,311 @@
 /* --------------------------------------------------------------------------
    Écran de bienvenue.
 
-   Pas de barre d'onglets, pas de navigation : un seul choix à faire, dans
-   l'ordre de lecture. La colonne est bornée à la largeur de lecture parce que
-   le paragraphe sur le stockage local doit vraiment être lu.
+   Cinq écrans successifs : ce que c'est, comment l'installer, comment elle se
+   sert, où vivent les données, et enfin le choix des séances. Pas de barre
+   d'onglets — un seul geste possible à la fois, dans l'ordre de lecture. La
+   colonne est bornée à la largeur de lecture parce que le paragraphe sur le
+   stockage local doit vraiment être lu.
+
+   La navigation est en bas : sur un téléphone tenu d'une main, « Suivant » se
+   répète quatre fois de suite et doit tomber sous le pouce.
    -------------------------------------------------------------------------- */
 .welcome {
   min-height: 100dvh;
-  padding: calc(var(--safe-top) + var(--space-10)) var(--space-5)
-    calc(var(--safe-bottom) + var(--space-10));
+  padding: calc(var(--safe-top) + var(--space-6)) var(--space-5)
+    calc(var(--safe-bottom) + var(--space-8));
   max-width: 34rem;
   margin: 0 auto;
   display: grid;
-  align-content: start;
+  /* barre de progression · étape · navigation. La rangée souple au milieu fixe
+     « Suivant » au même endroit sur les cinq écrans : sur un onboarding, un
+     bouton qui remonte à chaque étape se cherche à chaque fois. */
+  grid-template-rows: auto 1fr auto;
   gap: var(--space-6);
 }
 
-.welcome-head {
-  display: grid;
-  justify-items: start;
+/* --- Barre de progression -------------------------------------------------- */
+
+.welcome-bar {
+  display: flex;
+  align-items: center;
   gap: var(--space-3);
 }
 
-.welcome-head .brand-mark {
-  width: 2.75rem;
-  height: 2.75rem;
-  font-size: var(--text-xl);
+.welcome-bar .brand-mark {
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: var(--text-md);
 }
 
-.welcome-head h1 {
+/* Des segments plutôt que des points : la longueur restante se voit d'un coup
+   d'œil, ce qui est exactement la question qu'on se pose sur un onboarding. */
+.welcome-progress {
+  display: flex;
+  flex: 1;
+  gap: var(--space-1);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.welcome-progress li {
+  flex: 1;
+  height: 3px;
+  border-radius: var(--radius-full);
+  background: var(--surface-3);
+  transition: background var(--dur) var(--ease-out);
+}
+
+.welcome-progress .is-done {
+  background: color-mix(in oklab, var(--accent) 45%, var(--surface-3));
+}
+
+.welcome-progress .is-current {
+  background: var(--accent);
+}
+
+/* --- Contenu d'une étape --------------------------------------------------- */
+
+.welcome-step {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: var(--space-4);
+}
+
+/* Le titre reçoit le focus au changement d'étape : sans ce retrait, le contour
+   du navigateur s'affiche sur un élément que personne n'a cliqué. */
+.welcome-step h1:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 6px;
+}
+.welcome-step h1:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.welcome-step .display {
   font-size: var(--text-4xl);
 }
 
-.welcome-head b {
+.welcome-title {
+  font-size: var(--text-3xl);
+  letter-spacing: var(--tracking-display);
+  max-width: 15ch;
+}
+
+.welcome-step b {
   font-weight: 500;
   color: var(--text-3);
 }
 
-.welcome-privacy {
-  display: flex;
-  gap: var(--space-4);
-  align-items: flex-start;
-  border-color: var(--line-strong);
+/* `.welcome-step` est une grille : ses enfants n'ont pas besoin de marges, mais
+   les blocs venus d'ailleurs (`.field`, `.lead`) en portent déjà. On les
+   neutralise ici plutôt que de les alourdir de cas particuliers. */
+.welcome-step > .field,
+.welcome-step > .lead {
+  margin-top: 0;
+  width: 100%;
 }
 
-.welcome-privacy p {
+.welcome-note {
   font-size: var(--text-sm);
+  color: var(--text-3);
   line-height: var(--leading-normal);
-  color: var(--text-2);
-  margin-top: var(--space-2);
 }
 
-.welcome-privacy strong {
+.welcome-installed-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+.welcome-installed-hint svg {
+  flex: 0 0 auto;
+}
+
+/* --- Navigation ------------------------------------------------------------ */
+
+.welcome-nav {
+  display: flex;
+  gap: var(--space-2);
+}
+.welcome-nav .button {
+  flex: 1 1 0;
+}
+/* Sur une seule étape sans « Retour », l'action reste à droite plutôt que de
+   s'étaler sur toute la largeur : c'est un pas en avant, pas une validation. */
+.welcome-nav:has(.button:only-child) {
+  justify-content: flex-end;
+}
+.welcome-nav:has(.button:only-child) .button {
+  flex: 0 1 auto;
+  min-width: 12rem;
+}
+
+/* --- Listes numérotées (fonctionnement, installation) ---------------------- */
+
+.welcome-how,
+.install-steps {
+  display: grid;
+  gap: var(--space-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.welcome-how li,
+.install-steps li {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.welcome-how-index,
+.install-step-index {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.welcome-how strong,
+.install-steps strong {
+  display: block;
+  font-size: var(--text-base);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+}
+
+.welcome-how small,
+.install-steps small {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  line-height: var(--leading-normal);
+}
+
+/* --- Faits sur le stockage local ------------------------------------------- */
+
+.welcome-facts {
+  display: grid;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.welcome-fact {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  line-height: var(--leading-normal);
+}
+.welcome-fact svg {
+  margin-top: 2px;
+  color: var(--accent-text);
+}
+.welcome-fact strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--text);
+  font-weight: 600;
+}
+.welcome-fact code {
+  font-size: 0.95em;
   color: var(--text);
 }
 
-.welcome-privacy-icon {
+/* --- Installation ---------------------------------------------------------- */
+
+.install-reason {
+  font-size: var(--text-md);
+  color: var(--text-2);
+  line-height: var(--leading-normal);
+  max-width: var(--reading-max);
+}
+
+.install-now {
+  width: 100%;
+}
+
+.install-platform {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-3);
+  line-height: var(--leading-snug);
+}
+.install-platform svg {
   flex: 0 0 auto;
+}
+
+.install-done {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+  width: 100%;
+  padding: var(--space-4);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+}
+.install-done-icon {
   display: grid;
   place-items: center;
   width: 2.25rem;
   height: 2.25rem;
   border-radius: var(--radius-sm);
-  background: var(--accent-soft);
-  color: var(--accent-text);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.install-done strong {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-base);
+}
+.install-done p {
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  line-height: var(--leading-normal);
 }
 
-/* Le paragraphe ci-dessus est déjà en --text-2 avec une spécificité plus forte :
-   la note se distingue par sa taille et son icône, pas par une couleur plus
-   pâle — c'est celle qui aurait été la plus près du seuil de contraste. */
-.welcome-privacy-note {
-  display: flex;
-  gap: var(--space-2);
-  align-items: flex-start;
-  font-size: var(--text-xs);
-}
-
-.welcome-privacy-note svg {
-  flex: 0 0 auto;
-  margin-top: 2px;
-}
-
-.welcome-question {
-  font-family: var(--font-display);
-  font-size: var(--text-2xl);
-  letter-spacing: var(--tracking-tight);
-  margin-bottom: calc(-1 * var(--space-2));
-}
+/* --- Choix des séances ---------------------------------------------------- */
 
 .welcome-choices {
   display: grid;
   gap: var(--space-3);
 }
 
+/* L'icône s'aligne sur le titre, pas sur le centre du bloc : sur 375 px la
+   description tient en cinq lignes, et une pastille centrée là-dedans laissait
+   le titre commencer seul, très à droite, sans rien en face. */
 .welcome-choice {
   display: flex;
   gap: var(--space-4);
-  align-items: center;
+  align-items: flex-start;
   width: 100%;
   min-height: var(--tap-comfort);
   padding: var(--space-4);
@@ -136,8 +345,10 @@
   line-height: var(--leading-snug);
 }
 
+/* Le chevron désigne la carte entière, pas son titre : il reste au centre. */
 .welcome-choice > svg:last-child {
   flex: 0 0 auto;
+  align-self: center;
   color: var(--text-3);
 }
 
