@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Zeus Training">
+  <rect width="512" height="512" rx="112" fill="#0a0a09" />
+  <path
+    d="M150 146h216v50L232 316h134v50H150v-50l134-120H150z"
+    fill="#d8ff3e"
+  />
+</svg>

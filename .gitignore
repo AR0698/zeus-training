@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+*.tsbuildinfo
+
+# generated icons (rebuilt by `npm run build`)
+public/icon-192.png
+public/icon-512.png
+public/icon-maskable-512.png
+public/apple-touch-icon.png
+
+# environment
+.env*
+
+# editors / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Personal training data — never commit these to a public repository.
+docs/
+*-mes-donnees.json
+zeus-training-*.json

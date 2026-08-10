@@ -1,0 +1,209 @@
+/* ==========================================================================
+   Zeus Training — design tokens
+   Every colour, size and duration in the app resolves to one of these.
+   Components never hardcode a hex value, which is what makes the two themes
+   provably consistent instead of accidentally consistent.
+   ========================================================================== */
+
+:root {
+  /* --- Typography ------------------------------------------------------- */
+  --font-display: "Archivo", "Helvetica Neue", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --text-3xs: 0.625rem;  /* 10px — legal / micro labels only */
+  --text-2xs: 0.6875rem; /* 11px */
+  --text-xs: 0.75rem;    /* 12px */
+  --text-sm: 0.8125rem;  /* 13px */
+  --text-base: 0.9375rem;/* 15px */
+  --text-md: 1rem;       /* 16px — minimum for body copy on mobile */
+  --text-lg: 1.125rem;
+  --text-xl: 1.3125rem;
+  --text-2xl: 1.625rem;
+  --text-3xl: 2rem;
+  --text-4xl: 2.5rem;
+  --text-display: clamp(2.125rem, 7.5vw, 4rem);
+
+  --leading-tight: 1.05;
+  --leading-snug: 1.3;
+  --leading-normal: 1.55;
+
+  --tracking-display: -0.045em;
+  --tracking-tight: -0.02em;
+  --tracking-label: 0.14em;
+
+  /* --- Spacing (4 pt rhythm) -------------------------------------------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* --- Radii ------------------------------------------------------------ */
+  --radius-xs: 0.5rem;
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
+  --radius-full: 999px;
+
+  /* --- Motion ----------------------------------------------------------- */
+  --dur-fast: 120ms;
+  --dur: 180ms;
+  --dur-slow: 280ms;
+  --dur-exit: 140ms;
+  --ease-out: cubic-bezier(0.22, 0.9, 0.28, 1);
+  --ease-in: cubic-bezier(0.5, 0, 0.85, 0.4);
+  --ease-spring: cubic-bezier(0.34, 1.36, 0.42, 1);
+
+  /* --- Layout ----------------------------------------------------------- */
+  --page-max: 68rem;
+  --reading-max: 34rem;
+  --tap-min: 2.75rem;   /* 44px — never go below this for a control */
+  --tap-comfort: 3.25rem;
+  --nav-height: 4.25rem;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  --z-sticky: 20;
+  --z-nav: 40;
+  --z-overlay: 60;
+  --z-sheet: 70;
+  --z-toast: 90;
+
+  /* --- Semantic accents (theme independent hues) ------------------------ */
+  --acid: #d8ff3e;
+  --orange: #ff7a45;
+  --sky: #6fd3ff;
+  --violet: #c0a6ff;
+}
+
+/* --------------------------------------------------------------------------
+   Dark theme — the default in a gym: less glare, better in low light.
+   -------------------------------------------------------------------------- */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0a0a09;
+  --bg-gradient: radial-gradient(120% 80% at 100% 0%, #16180f 0%, #0a0a09 55%);
+  --surface: #141412;
+  --surface-2: #1c1c19;
+  --surface-3: #242420;
+  --line: #2b2b26;
+  --line-strong: #3b3b34;
+
+  --text: #f6f6f1;      /* 18.2:1 on --bg */
+  --text-2: #a9aaa1;    /*  9.1:1 */
+  --text-3: #7e8077;    /*  5.4:1 */
+
+  --accent: var(--acid);
+  --accent-ink: #0a0a09;
+  --accent-text: var(--acid);       /* 15.6:1 on --bg */
+  --accent-soft: rgba(216, 255, 62, 0.14);
+  --accent-line: rgba(216, 255, 62, 0.32);
+
+  --success: #5fd98c;
+  --success-text: #6fe098;
+  --warn: #ffc53d;
+  --warn-text: #ffcf5c;
+  --danger: #ff7060;
+  --danger-text: #ff8b7d;
+  --info: #74d0ff;
+
+  --overlay: rgba(6, 6, 5, 0.7);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 12px 28px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55);
+  --glow: 0 0 0 1px var(--accent-line), 0 10px 40px rgba(216, 255, 62, 0.09);
+
+  --accent-acid-text: #d8ff3e;
+  --accent-orange-text: #ff9366;
+  --accent-sky-text: #7fd8ff;
+  --accent-violet-text: #cbb4ff;
+}
+
+/* --------------------------------------------------------------------------
+   Light theme — paper-like, for reviewing programs away from the gym.
+   -------------------------------------------------------------------------- */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f2f2ec;
+  --bg-gradient: radial-gradient(120% 80% at 100% 0%, #fbffe4 0%, #f2f2ec 55%);
+  --surface: #ffffff;
+  --surface-2: #fafaf4;
+  --surface-3: #eeeee6;
+  --line: #dfe0d6;
+  --line-strong: #c5c6ba;
+
+  --text: #121210;      /* 16.9:1 on --bg */
+  --text-2: #53554c;    /*  7.6:1 */
+  --text-3: #6f7168;    /*  5.0:1 */
+
+  --accent: var(--acid);
+  --accent-ink: #12140a;
+  --accent-text: #5b6b00;           /* 5.6:1 on --bg — readable as text */
+  --accent-soft: rgba(180, 214, 20, 0.2);
+  --accent-line: rgba(120, 145, 0, 0.35);
+
+  --success: #1f9d55;
+  --success-text: #157347;
+  --warn: #b7791f;
+  --warn-text: #8a5a10;
+  --danger: #d64535;
+  --danger-text: #b3291a;
+  --info: #0b6f95;
+
+  --overlay: rgba(18, 18, 14, 0.5);
+  --shadow-sm: 0 1px 2px rgba(35, 36, 28, 0.08);
+  --shadow-md: 0 10px 26px rgba(35, 36, 28, 0.1);
+  --shadow-lg: 0 24px 60px rgba(35, 36, 28, 0.16);
+  --glow: 0 0 0 1px var(--accent-line), 0 10px 30px rgba(150, 180, 20, 0.14);
+
+  --accent-acid-text: #5b6b00;
+  --accent-orange-text: #b2400f;
+  --accent-sky-text: #0b6f95;
+  --accent-violet-text: #5b3fbf;
+}
+
+/* --------------------------------------------------------------------------
+   Per-program accent. Applied as a class so a card can carry its own hue
+   without any inline style.
+   -------------------------------------------------------------------------- */
+.accent-acid {
+  --accent: var(--acid);
+  --accent-text: var(--accent-acid-text);
+  --accent-soft: rgba(216, 255, 62, 0.16);
+  --accent-line: rgba(216, 255, 62, 0.34);
+}
+.accent-orange {
+  --accent: var(--orange);
+  --accent-text: var(--accent-orange-text);
+  --accent-soft: rgba(255, 122, 69, 0.16);
+  --accent-line: rgba(255, 122, 69, 0.34);
+}
+.accent-sky {
+  --accent: var(--sky);
+  --accent-text: var(--accent-sky-text);
+  --accent-soft: rgba(111, 211, 255, 0.16);
+  --accent-line: rgba(111, 211, 255, 0.34);
+}
+.accent-violet {
+  --accent: var(--violet);
+  --accent-text: var(--accent-violet-text);
+  --accent-soft: rgba(192, 166, 255, 0.16);
+  --accent-line: rgba(192, 166, 255, 0.34);
+}
+.accent-acid,
+.accent-orange,
+.accent-sky,
+.accent-violet {
+  --accent-ink: #0a0a09;
+}

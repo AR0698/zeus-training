@@ -1,0 +1,137 @@
+/**
+ * Domain types for Zeus Training.
+ *
+ * Two rules keep this model bug-resistant:
+ *
+ * 1. A running session **snapshots** everything it needs from the program.
+ *    Nothing in `Session` points back into `Program` by array index, so editing
+ *    a program (or reordering exercises) while a session is live can never
+ *    desynchronise the logged sets from the exercise they belong to.
+ * 2. Every timestamp is an epoch millisecond number, never a formatted string.
+ *    Formatting happens at the very edge, in `format.ts`.
+ */
+
+export type Unit = "kg" | "sec";
+export type MuscleGroup = "upper" | "lower" | "core";
+export type Effort = "easy" | "good" | "hard";
+export type SessionExerciseStatus = "pending" | "done" | "skipped";
+export type ThemePreference = "auto" | "dark" | "light";
+
+/** An exercise as it lives in a program: the plan, not the performance. */
+export type ExerciseTemplate = {
+  id: string;
+  name: string;
+  shortName: string;
+  group: MuscleGroup;
+  unit: Unit;
+  sets: number;
+  repMin: number;
+  repMax: number;
+  /** Target load per set for the next session. Length should equal `sets`. */
+  targetWeights: number[];
+  /** What was actually lifted last time, per set. Used to show the delta. */
+  lastWeights: number[];
+  cue: string;
+  tip: string;
+  videoUrl: string;
+  alternatives: string[];
+  /** Default rest between sets, in seconds. */
+  restSeconds: number;
+};
+
+export type Program = {
+  id: string;
+  name: string;
+  focus: string;
+  /** Accent hue name, resolved to a CSS variable by the UI. */
+  accent: "acid" | "orange" | "sky" | "violet";
+  warmup: string;
+  estimatedMinutes: number;
+  exercises: ExerciseTemplate[];
+};
+
+export type SetEntry = {
+  weight: number;
+  reps: number;
+  done: boolean;
+  /** Set when this set beat the stored personal record at validation time. */
+  pr: boolean;
+};
+
+/** An exercise inside a live session: a self-contained snapshot + the logs. */
+export type SessionExercise = {
+  exerciseId: string;
+  name: string;
+  shortName: string;
+  group: MuscleGroup;
+  unit: Unit;
+  repMin: number;
+  repMax: number;
+  cue: string;
+  tip: string;
+  videoUrl: string;
+  alternatives: string[];
+  restSeconds: number;
+  sets: SetEntry[];
+  effort: Effort | null;
+  status: SessionExerciseStatus;
+  /** Name of the substitute movement when the machine was taken. */
+  replacedBy: string | null;
+};
+
+export type Session = {
+  id: string;
+  programId: string;
+  programName: string;
+  accent: Program["accent"];
+  startedAt: number;
+  currentIndex: number;
+  exercises: SessionExercise[];
+};
+
+export type HistoryEntry = {
+  id: string;
+  date: number;
+  programId: string;
+  programName: string;
+  durationMinutes: number;
+  completedExercises: number;
+  totalExercises: number;
+  completedSets: number;
+  /** Sum of weight × reps over validated sets (seconds-based work excluded). */
+  volume: number;
+  note: string;
+  /** Short names of exercises that produced a personal record. */
+  personalRecords: string[];
+};
+
+/** Best validated set ever recorded, per exercise id. */
+export type PersonalRecord = {
+  weight: number;
+  reps: number;
+  date: number;
+};
+
+export type Settings = {
+  theme: ThemePreference;
+  /** Start the rest countdown automatically when a set is validated. */
+  autoRest: boolean;
+  /** Fallback rest duration when an exercise has none, in seconds. */
+  defaultRestSeconds: number;
+  vibration: boolean;
+  /** Hold a screen wake lock during a session. */
+  keepAwake: boolean;
+  displayName: string;
+};
+
+export type AppState = {
+  /** Persisted schema version. Bump it and add a migration, never mutate. */
+  version: number;
+  createdAt: number;
+  programs: Program[];
+  session: Session | null;
+  history: HistoryEntry[];
+  records: Record<string, PersonalRecord>;
+  lastCompletedProgramId: string | null;
+  settings: Settings;
+};
