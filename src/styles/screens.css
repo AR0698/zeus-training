@@ -540,6 +540,27 @@
 
 .panel { margin-bottom: var(--space-4); }
 .panel-danger { border-color: color-mix(in oklab, var(--danger) 35%, var(--line)); }
+
+/* Rythme vertical d'un panneau.
+
+   Le reset met `h2` et `p` à zéro de marge, et la plupart des enfants d'un
+   panneau portent déjà la leur (`.field`, `.segmented`, `.meta-list`, les
+   listes à filets). Restaient sans espacement les trois éléments les plus
+   fréquents — le titre, le paragraphe qui l'explique, l'action qui le conclut :
+   ils se touchaient, et le panneau se lisait comme un seul pavé de texte.
+
+   D'où des règles ciblées plutôt qu'un `> * + *` global : les `.toggle-row`
+   s'enchaînent volontairement à fleur de filet, un espacement générique les
+   décollerait. La progression 4 → 8 → 20 px hiérarchise l'étiquette, le titre
+   et l'action au lieu de les aligner sur une même valeur. */
+.panel > .panel-title + .lead { margin-top: var(--space-2); }
+.panel > :is(.panel-title, .lead) + :is(.button, .button-row) {
+  margin-top: var(--space-5);
+}
+/* `.button` est `inline-flex` : sans passer en bloc, la boîte de ligne qui
+   l'entoure rajoute un demi-interligne au-dessus et au-dessous, et le bouton
+   seul ne s'aligne plus sur le `.button-row` du panneau voisin. */
+.panel > .button { display: flex; width: fit-content; }
 .app-footnote {
   margin-top: var(--space-6);
   font-size: var(--text-xs);
