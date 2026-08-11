@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { EXERCISE_CATALOG } from "../src/domain/catalog/index.ts";
+import { sourceFor } from "../src/domain/source.ts";
 
 /**
  * Les liens de démonstration, vérifiés sur leur forme.
@@ -17,14 +18,10 @@ import { EXERCISE_CATALOG } from "../src/domain/catalog/index.ts";
 
 const HOTES = new Set(["musclewiki.com", "www.youtube.com", "youtube.com"]);
 
-test("chaque mouvement du catalogue a un lien de démonstration", () => {
-  for (const { template } of EXERCISE_CATALOG) {
-    assert.ok(template.videoUrl, `${template.id} : aucun lien`);
-  }
-});
+const AVEC_SOURCE = EXERCISE_CATALOG.filter(({ template }) => template.videoUrl !== "");
 
 test("tout lien est une URL https sur un hôte choisi", () => {
-  for (const { template } of EXERCISE_CATALOG) {
+  for (const { template } of AVEC_SOURCE) {
     let url: URL;
     try {
       url = new URL(template.videoUrl);
@@ -39,7 +36,7 @@ test("tout lien est une URL https sur un hôte choisi", () => {
 test("un lien MuscleWiki pointe sur une fiche, jamais sur une liste", () => {
   // `/exercise/<slug>` est la fiche ; `/exercises/<muscle>` est la catégorie.
   // La confusion d'une lettre mène à une page qui ne montre pas le mouvement.
-  for (const { template } of EXERCISE_CATALOG) {
+  for (const { template } of AVEC_SOURCE) {
     const url = new URL(template.videoUrl);
     if (url.hostname !== "musclewiki.com") continue;
     const [segment, slug, ...reste] = url.pathname.split("/").filter(Boolean);
@@ -49,15 +46,21 @@ test("un lien MuscleWiki pointe sur une fiche, jamais sur une liste", () => {
   }
 });
 
-test("le repli est une recherche, qui résout toujours", () => {
-  // Les mouvements sans fiche tierce vérifiée retombent sur une recherche
-  // vidéo. C'est volontaire : mieux vaut une liste de résultats qu'une 404.
-  const replis = EXERCISE_CATALOG.filter(({ template }) =>
-    template.videoUrl.startsWith("https://www.youtube.com/results"),
-  );
-  for (const { template } of replis) {
-    const query = new URL(template.videoUrl).searchParams.get("search_query");
-    assert.ok(query, `${template.id} : recherche vide`);
-    assert.ok(query.includes(template.name), `${template.id} : la recherche ignore le nom`);
+test("aucune source n'est une page de résultats de recherche", () => {
+  // Le catalogue en générait une pour tout mouvement sans fiche. Une liste de
+  // résultats n'est pas une démonstration : mieux vaut ne rien afficher et
+  // laisser l'utilisateur renseigner la sienne.
+  for (const { template } of AVEC_SOURCE) {
+    const url = new URL(template.videoUrl);
+    assert.ok(!url.pathname.includes("results"), `${template.id} : renvoie sur une recherche`);
+    assert.equal(url.search, "", `${template.id} : la source porte une requête — ${url.search}`);
+  }
+});
+
+test("chaque source du catalogue se résout en vidéo ou en article", () => {
+  // Le parsing qui alimente la fiche technique. Une source que `sourceFor`
+  // rejette n'afficherait rien du tout, en silence.
+  for (const { template } of AVEC_SOURCE) {
+    assert.ok(sourceFor(template.videoUrl), `${template.id} : source illisible`);
   }
 });

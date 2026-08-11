@@ -71,21 +71,11 @@ type CatalogInput = {
   tags: string[];
   unit?: Unit;
   restSeconds?: number;
-  /** Lien de démonstration vérifié. Sinon, une recherche vidéo est générée. */
+  /** Démonstration vérifiée à la main. Absente tant qu'aucune ne l'a été. */
   videoUrl?: string;
 };
 
 const DEFAULT_REST: Record<MuscleGroup, number> = { upper: 90, lower: 120, core: 45 };
-
-/**
- * Une recherche vidéo résout toujours ; un lien direct vers un site tiers
- * finit par renvoyer une 404, et une fiche technique qui mène à une page morte
- * est pire qu'une fiche sans lien.
- */
-function demoUrl(name: string): string {
-  const query = encodeURIComponent(`${name} technique musculation`);
-  return `https://www.youtube.com/results?search_query=${query}`;
-}
 
 /** Aligne la charge de départ sur le nombre de séries, quoi qu'on lui donne. */
 function fitWeights(start: number[], sets: number, unit: Unit): number[] {
@@ -110,7 +100,9 @@ export function entry(input: CatalogInput): CatalogEntry {
     lastWeights: [...targetWeights],
     cue: input.cue,
     tip: input.tip,
-    videoUrl: input.videoUrl ?? demoUrl(input.name),
+    // Vide plutôt qu'une recherche générée : une liste de résultats n'est pas
+    // une démonstration. La fiche invite alors à renseigner sa propre source.
+    videoUrl: input.videoUrl ?? "",
     alternatives: [...input.alternatives],
     restSeconds: input.restSeconds ?? DEFAULT_REST[input.group],
   };

@@ -1,8 +1,9 @@
 import { formatLoad, formatRepRange } from "../../domain/format.ts";
 import { figureFor } from "../figures.ts";
-import { IconExternal, IconTarget } from "../icons.tsx";
+import { IconTarget } from "../icons.tsx";
 import type { ExerciseDetail } from "../types.ts";
 import { ExerciseFigure } from "./ExerciseFigure.tsx";
+import { ExerciseSource } from "./ExerciseSource.tsx";
 import { Sheet } from "./Sheet.tsx";
 
 /**
@@ -75,11 +76,16 @@ export function ExerciseSheet({
             </div>
           )}
 
-          {detail.videoUrl && (
-            <a className="button button-primary" href={detail.videoUrl} target="_blank" rel="noreferrer">
-              Voir la démonstration
-              <IconExternal size={17} />
-            </a>
+          {detail.videoUrl ? (
+            <ExerciseSource url={detail.videoUrl} name={detail.name} />
+          ) : (
+            /* Pas de source vérifiée pour ce mouvement. On le dit, plutôt que
+               de renvoyer vers une recherche : une liste de résultats n'est pas
+               une démonstration, et le carnet appartient à celui qui le tient. */
+            <p className="sheet-footnote">
+              Aucune démonstration vérifiée pour ce mouvement. Ajoute la tienne — vidéo ou article —
+              depuis l&apos;édition de l&apos;exercice.
+            </p>
           )}
           <p className="sheet-footnote">
             Les repères sont génériques : adapte toujours les réglages à la machine de ta salle.

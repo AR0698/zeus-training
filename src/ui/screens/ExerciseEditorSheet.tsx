@@ -247,7 +247,7 @@ export function ExerciseEditorSheet({
       </label>
 
       <label className="field">
-        <span className="field-label">Lien vidéo</span>
+        <span className="field-label">Source</span>
         <input
           className="field-input"
           type="url"
@@ -257,6 +257,10 @@ export function ExerciseEditorSheet({
           onChange={(event) => setDraft((d) => ({ ...d, videoUrl: event.target.value }))}
           onBlur={() => onPatch({ videoUrl: draft.videoUrl.trim() })}
         />
+        <span className="field-help">
+          Vidéo ou article. Un lien YouTube se lit dans la fiche technique, sans quitter
+          l&apos;application ; tout le reste s&apos;ouvre dans un onglet.
+        </span>
       </label>
 
       <label className="field">

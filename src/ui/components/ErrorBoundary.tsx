@@ -46,7 +46,7 @@ export class ErrorBoundary extends Component<
         </p>
         <pre className="crash-detail">{this.state.error.message}</pre>
         <div className="crash-actions">
-          <button type="button" className="button button-primary" onClick={() => location.reload()}>
+          <button type="button" className="button button-solid" onClick={() => location.reload()}>
             Recharger
           </button>
           <button type="button" className="button button-ghost" onClick={() => void this.downloadRaw()}>

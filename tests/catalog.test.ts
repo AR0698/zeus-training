@@ -18,7 +18,13 @@ test("chaque fiche du catalogue est cohérente avec elle-même", () => {
     assert.ok(template.restSeconds > 0, template.id);
     assert.ok(template.cue.length > 0, `${template.id} : consigne manquante`);
     assert.ok(template.tip.length > 0, `${template.id} : conseil manquant`);
-    assert.ok(template.videoUrl.startsWith("https://"), `${template.id} : lien de démo`);
+    // La source est facultative : un mouvement sans démonstration vérifiée
+    // n'en affiche aucune et invite à renseigner la sienne. Mais si elle est
+    // là, elle est en https — voir tests/links.test.ts.
+    assert.ok(
+      template.videoUrl === "" || template.videoUrl.startsWith("https://"),
+      `${template.id} : source ni vide ni https`,
+    );
   }
 });
 
