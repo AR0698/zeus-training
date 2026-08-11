@@ -281,13 +281,19 @@ function ExerciseCard({
           {entry.replacedBy && <span className="swap-note">remplace {entry.name}</span>}
           <p className="exercise-cue">{entry.cue}</p>
         </div>
+        {/* Le mot compte autant que l'icône : c'est la seule porte vers le
+            dessin du mouvement, et un (i) seul ne dit pas ce qu'il y a
+            derrière. L'`aria-label` reprend le libellé visible puis nomme
+            l'exercice — sinon toutes les cartes d'une séance offrent le même
+            « Technique » à qui navigue de bouton en bouton. */}
         <button
           type="button"
-          className="icon-button"
+          className="technique-button"
           onClick={() => handlers.openDetail(detailFromSession(entry))}
           aria-label={`Technique de ${entry.name}`}
         >
-          <IconInfo size={18} />
+          <IconInfo size={16} />
+          Technique
         </button>
       </header>
 

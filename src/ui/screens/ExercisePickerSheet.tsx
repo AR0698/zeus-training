@@ -9,6 +9,7 @@ import {
   type Equipment,
 } from "../../domain/library.ts";
 import type { ExerciseTemplate, MuscleGroup } from "../../domain/types.ts";
+import { ExerciseThumb } from "../components/ExerciseThumb.tsx";
 import { Sheet } from "../components/Sheet.tsx";
 import { IconPlus, IconSearch } from "../icons.tsx";
 
@@ -116,6 +117,7 @@ export function ExercisePickerSheet({
                 {items.map((exercise) => (
                   <li key={exercise.id}>
                     <button type="button" onClick={() => onPick(exercise)}>
+                      <ExerciseThumb exerciseId={exercise.id} />
                       <span className="picker-name">{exercise.name}</span>
                       <span className="picker-meta tabular">
                         {exercise.sets} × {formatRepRange(exercise.repMin, exercise.repMax)}

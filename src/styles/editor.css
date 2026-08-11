@@ -173,7 +173,7 @@
 }
 .picker-list button {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: var(--space-3);
   width: 100%;
@@ -185,12 +185,35 @@
 }
 .picker-list li:last-child button { border-bottom: 1px solid var(--line); }
 .picker-list button:hover { background: var(--surface-2); }
+
+/* La vignette du catalogue. Même dessin noir sur blanc que la fiche technique,
+   donc même traitement : inversé puis fondu en `screen` en thème sombre,
+   `multiply` en thème clair. Pas de fond propre — le trait se fond dans la
+   ligne, y compris quand le survol la teinte. */
+.exercise-thumb {
+  display: block;
+  width: 2.75rem;
+  height: 2.75rem;
+}
+.thumb-frame {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: invert(1);
+  mix-blend-mode: screen;
+}
+:root[data-theme="light"] .thumb-frame {
+  filter: none;
+  mix-blend-mode: multiply;
+}
+/* Le nom passe à la ligne plutôt que de se faire couper : c'est lui qui
+   identifie le mouvement, et « Planche avec touches d'épaules » tronqué à
+   « Planche avec touches d'ép… » ne dit plus lequel c'est. */
 .picker-name {
   font-size: var(--text-base);
   font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: var(--leading-snug);
+  text-wrap: pretty;
 }
 .picker-meta { font-size: var(--text-xs); color: var(--text-3); }
 .picker-list svg { color: var(--accent-text); }
