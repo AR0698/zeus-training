@@ -125,7 +125,7 @@ export const CHEST: CatalogEntry[] = [
     cue: "Coude souple, épaules collées au dossier.",
     tip: "Rapproche les bras sans laisser les poids claquer.",
     videoUrl: "https://musclewiki.com/exercise/machine-chest-fly",
-    alternatives: ["Écarté poulie vis-à-vis", "Écarté haltères", "Pompes lentes"],
+    alternatives: ["Écarté poulie vis-à-vis", "Écarté haltères", "Pompes"],
     tags: ["pectoraux", "écarté", "butterfly", "isolation"],
   }),
   entry({
@@ -141,7 +141,7 @@ export const CHEST: CatalogEntry[] = [
     restSeconds: 60,
     cue: "Poulies hautes, buste légèrement penché, mains qui se rejoignent devant.",
     tip: "Tension continue : ne relâche pas complètement en fin de retour.",
-    alternatives: ["Pec Deck", "Écarté haltères", "Pompes lentes"],
+    alternatives: ["Pec Deck", "Écarté haltères", "Pompes"],
     tags: ["pectoraux", "écarté", "isolation", "câble"],
   }),
   entry({
@@ -157,7 +157,7 @@ export const CHEST: CatalogEntry[] = [
     restSeconds: 60,
     cue: "Coudes légèrement fléchis et figés, descente en arc de cercle.",
     tip: "Léger : l'épaule est en position vulnérable en bas du mouvement.",
-    alternatives: ["Pec Deck", "Écarté poulie vis-à-vis", "Pompes lentes"],
+    alternatives: ["Pec Deck", "Écarté poulie vis-à-vis", "Pompes"],
     tags: ["pectoraux", "écarté", "isolation"],
   }),
   entry({

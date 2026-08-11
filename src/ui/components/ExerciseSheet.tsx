@@ -1,15 +1,18 @@
 import { formatLoad, formatRepRange } from "../../domain/format.ts";
+import { figureFor } from "../figures.ts";
 import { IconExternal, IconTarget } from "../icons.tsx";
 import type { ExerciseDetail } from "../types.ts";
+import { ExerciseFigure } from "./ExerciseFigure.tsx";
 import { Sheet } from "./Sheet.tsx";
 
 /**
  * Technique reference for one movement.
  *
- * Deliberately text-first. The previous version leaned on generic stock photos
- * of a gym, which look decorative but tell you nothing about the movement — and
- * they were remote images, so they were blank exactly when you needed them: in
- * a basement with no signal.
+ * Text first, dessin ensuite quand il en existe un. La version précédente
+ * s'appuyait sur des photos de salle génériques : décoratives, muettes sur le
+ * mouvement, et distantes — donc blanches exactement quand on en avait besoin,
+ * au sous-sol sans réseau. Les dessins d'ici sont embarqués dans
+ * l'application, et un mouvement sans dessin n'en affiche aucun.
  */
 export function ExerciseSheet({
   detail,
@@ -18,12 +21,16 @@ export function ExerciseSheet({
   detail: ExerciseDetail | null;
   onClose: () => void;
 }) {
+  const figure = figureFor(detail?.figureId ?? null);
+
   return (
     <Sheet open={detail !== null} onClose={onClose} label={detail ? `Technique — ${detail.name}` : "Technique"}>
       {detail && (
         <>
           <span className="kicker">Technique</span>
           <h2 className="sheet-title">{detail.name}</h2>
+
+          {figure && <ExerciseFigure figure={figure} name={detail.name} />}
 
           <div className="detail-targets">
             <div>

@@ -320,6 +320,60 @@
 
 /* --- Technique sheet ------------------------------------------------------ */
 
+/* Le mouvement en deux poses. Le dessin source est noir sur blanc : en thème
+   sombre on l'inverse puis on le fond en `screen`, ce qui efface le fond et ne
+   laisse que le trait. Une seule image sert les deux thèmes. */
+.exercise-figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.figure-frames {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.figure-frame {
+  position: absolute;
+  inset: var(--space-3);
+  width: calc(100% - var(--space-6));
+  height: calc(100% - var(--space-6));
+  object-fit: contain;
+  filter: invert(1);
+  mix-blend-mode: screen;
+  animation: figure-flip 2s ease-in-out infinite;
+}
+
+.figure-frame-end { animation-delay: -1s; }
+
+@keyframes figure-flip {
+  0%, 42% { opacity: 1; }
+  50%, 92% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+:root[data-theme="light"] .figure-frame {
+  filter: none;
+  mix-blend-mode: multiply;
+}
+
+/* Une image fixe vaut mieux qu'un clignotement pour qui l'a demandé. */
+@media (prefers-reduced-motion: reduce) {
+  .figure-frame { animation: none; }
+  .figure-frame-end { opacity: 0; }
+}
+
+.figure-caveat {
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--warn-text);
+}
+
 .detail-targets {
   display: flex;
   flex-wrap: wrap;

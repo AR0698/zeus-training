@@ -15,6 +15,7 @@ Chaque installation part **vide** : au premier lancement, on choisit de composer
 - **Mode séance** — validation série par série, correction rapide de la charge et des répétitions, minuteur de repos, remplacement d'un exercice quand la machine est prise, exercice passé, arrêt et reprise plus tard. Une séance partielle est enregistrée comme une séance normale.
 - **Double progression prudente** — la cible ne monte que si toutes les séries ont atteint le haut de la fourchette sans être difficiles ; elle baisse de 10 % si une série est passée sous la fourchette ; elle est allégée de 10 % après trois semaines d'arrêt.
 - **Catalogue de 123 mouvements** — recherche par nom, par muscle (« pecs », « ischios ») ou par matériel, filtre par matériel disponible, et **trois équivalents minimum par exercice** pour le jour où la machine est prise. Un mouvement absent du catalogue se crée sur mesure.
+- **Le mouvement en image** — 80 des 123 fiches montrent le geste : deux dessins au trait, position de départ et position d'arrivée, qui alternent en boucle. Les images sont embarquées dans l'application (1,19 Mo au total, 15 Ko par exercice) et celles de la séance sont mises en cache dès qu'on appuie sur Démarrer, donc elles s'affichent au sous-sol sans réseau. Un mouvement sans dessin n'en affiche aucun — mieux vaut rien que le geste d'un autre exercice.
 - **Programmes** — éditeur complet : créer, renommer, dupliquer et supprimer une séance, ajouter et réordonner des exercices, régler séries, fourchette de répétitions, charges, repos, consignes et équivalents.
 - **Progrès** — volume par séance, records personnels, séries en cours, historique complet. Aucun chiffre n'est inventé : sans séance, l'écran le dit.
 - **Rappel de sauvegarde** — une fois par mois à l'ouverture, l'app explique où vivent les données et propose l'export. « Plus tard » reporte d'une semaine, un export repart pour un mois.
@@ -66,7 +67,11 @@ Chaque push sur `main` déclenche `.github/workflows/deploy.yml` : lint, tests, 
 
 React 19 · TypeScript strict · Vite · CSS natif avec design tokens · IndexedDB · service worker maison.
 
-Aucune dépendance d'exécution en dehors de React : pas de framework CSS, pas de bibliothèque de graphiques, pas de client HTTP. Le bundle fait ~103 ko gzip, dont une bonne part est le catalogue de mouvements — embarqué plutôt que téléchargé, puisque la salle de sport est justement l'endroit sans réseau.
+Aucune dépendance d'exécution en dehors de React : pas de framework CSS, pas de bibliothèque de graphiques, pas de client HTTP. Le bundle fait ~107 ko gzip, dont une bonne part est le catalogue de mouvements — embarqué plutôt que téléchargé, puisque la salle de sport est justement l'endroit sans réseau. S'y ajoutent 1,19 Mo d'illustrations dans `public/exercises/`, servies à la demande et mises en cache par le service worker.
+
+## Crédits
+
+Les dessins des mouvements viennent d'[everkinetic](https://github.com/everkinetic/data), sous licence [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Ils sont redimensionnés en WebP 420 px pour l'écran, sans autre modification ; toute version modifiée reste sous la même licence. L'attribution est rappelée dans l'écran Réglages de l'application.
 
 ## Architecture
 

@@ -242,6 +242,17 @@ export function SettingsScreen({
         Zeus Training · application privée, hors ligne, sans compte ni suivi. Les recommandations de
         charge sont un outil de suivi, pas une prescription médicale.
       </p>
+      <p className="app-footnote">
+        Les dessins des mouvements viennent d&apos;
+        <a href="https://github.com/everkinetic/data" target="_blank" rel="noreferrer">
+          everkinetic
+        </a>
+        , sous licence{" "}
+        <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">
+          CC BY-SA 4.0
+        </a>
+        . Ils sont redimensionnés pour l&apos;écran, sans autre modification.
+      </p>
 
       <Sheet open={confirmReset} onClose={() => setConfirmReset(false)} label="Confirmer la réinitialisation">
         <span className="kicker">Confirmation</span>

@@ -1,3 +1,4 @@
+import { normalise } from "../text.ts";
 import type { ExerciseTemplate } from "../types.ts";
 import { ARMS } from "./arms.ts";
 import { BACK } from "./back.ts";
@@ -9,6 +10,8 @@ import { SHOULDERS } from "./shoulders.ts";
 
 export { EQUIPMENTS, EQUIPMENT_LABELS } from "./entry.ts";
 export type { CatalogEntry, Equipment } from "./entry.ts";
+export { illustrationFor, illustratedIds } from "./illustrations.ts";
+export type { Illustration } from "./illustrations.ts";
 
 /**
  * Le catalogue complet, dans l'ordre où il s'affiche.
@@ -43,4 +46,15 @@ export function catalogEntry(id: string): CatalogEntry | null {
 export function catalogTemplate(id: string): ExerciseTemplate | null {
   const found = BY_ID.get(id);
   return found ? structuredClone(found.template) : null;
+}
+
+const BY_NAME = new Map(EXERCISE_CATALOG.map((item) => [normalise(item.template.name), item.template.id]));
+
+/**
+ * L'identifiant d'un mouvement retrouvé par son nom, insensible à la casse et
+ * aux accents. Sert au remplacement en séance : « machine occupée » enregistre
+ * un nom, pas un identifiant, et c'est par là qu'on retrouve son illustration.
+ */
+export function catalogIdByName(name: string): string | null {
+  return BY_NAME.get(normalise(name)) ?? null;
 }

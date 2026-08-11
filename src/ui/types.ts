@@ -1,3 +1,4 @@
+import { catalogIdByName } from "../domain/catalog/index.ts";
 import type { ExerciseTemplate, SessionExercise, Unit } from "../domain/types.ts";
 
 /**
@@ -16,10 +17,13 @@ export type ExerciseDetail = {
   repMax: number;
   setCount: number;
   loads: number[];
+  /** Identifiant du mouvement effectivement montré, pour son illustration. */
+  figureId: string | null;
 };
 
 export function detailFromTemplate(exercise: ExerciseTemplate): ExerciseDetail {
   return {
+    figureId: exercise.id,
     name: exercise.name,
     shortName: exercise.shortName,
     cue: exercise.cue,
@@ -36,6 +40,9 @@ export function detailFromTemplate(exercise: ExerciseTemplate): ExerciseDetail {
 
 export function detailFromSession(entry: SessionExercise): ExerciseDetail {
   return {
+    // Machine occupée : la fiche montre le mouvement de remplacement, donc son
+    // dessin aussi. Le remplacement n'est qu'un nom — d'où la recherche.
+    figureId: entry.replacedBy ? catalogIdByName(entry.replacedBy) : entry.exerciseId,
     name: entry.replacedBy ?? entry.name,
     shortName: entry.shortName,
     cue: entry.cue,

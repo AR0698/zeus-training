@@ -28,6 +28,7 @@ import { ExerciseSheet } from "./ui/components/ExerciseSheet.tsx";
 import { ReplaceSheet } from "./ui/components/ReplaceSheet.tsx";
 import { Sheet } from "./ui/components/Sheet.tsx";
 import { Toaster, useToaster, type ToastTone } from "./ui/components/Toast.tsx";
+import { preloadFigures } from "./ui/figures.ts";
 import {
   IconAlert,
   IconDumbbell,
@@ -130,6 +131,9 @@ export function App() {
       rest.stop();
       setSessionHidden(false);
       setTab("today");
+      // On tient encore le réseau de la maison : on met les dessins de la
+      // séance en cache maintenant, pour qu'ils s'affichent au sous-sol.
+      preloadFigures(program.exercises.map((exercise) => exercise.id));
     },
     [dispatch, haptics, rest],
   );
