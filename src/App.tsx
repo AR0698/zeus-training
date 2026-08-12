@@ -206,9 +206,18 @@ export function App() {
     dispatch({ type: "session/finish", now: Date.now() });
     rest.stop();
 
+    // L'annulation vaut pour les trois issues. Elle ne tenait qu'à la plus
+    // banale, alors qu'un enregistrement par mégarde coûte le plus cher
+    // précisément quand la séance a produit un record ou une hausse.
+    const cancel = { label: "Annuler", run: undo };
+
     if (prs.length > 0) {
       haptics.celebrate();
-      show({ message: `Record battu : ${prs.map((entry) => entry.shortName).join(", ")}`, tone: "success" });
+      show({
+        message: `Record battu : ${prs.map((entry) => entry.shortName).join(", ")}`,
+        tone: "success",
+        action: cancel,
+      });
     } else if (increases.length > 0) {
       haptics.confirm();
       const first = increases[0];
@@ -217,10 +226,11 @@ export function App() {
           ? `Séance enregistrée — ${first.entry.shortName} passe à ${formatLoad(first.decision.nextWeights.at(-1) ?? 0, first.entry.unit)}`
           : "Séance enregistrée",
         tone: "success",
+        action: cancel,
       });
     } else {
       haptics.confirm();
-      show({ message: "Séance enregistrée", tone: "success", action: { label: "Annuler", run: undo } });
+      show({ message: "Séance enregistrée", tone: "success", action: cancel });
     }
     setTab("today");
   }

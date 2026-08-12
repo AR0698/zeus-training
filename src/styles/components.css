@@ -519,6 +519,11 @@
   /* minmax(0, 1fr) on the value: the ± targets keep their size and the number
      shrinks, instead of the whole control overflowing its column. */
   grid-template-columns: 2.75rem minmax(0, 1fr) 2.75rem;
+  /* Deux cibles de 44 px plus un nombre lisible : en dessous de 132 px, la
+     valeur passe sous le seuil tactile et `overflow: hidden` finit par lui
+     couper un chiffre. Le contrôle se replace (voir `.set-cell`) plutôt que
+     de descendre ici. */
+  min-width: 8.25rem;
   align-items: stretch;
   /* La bordure est comprise dans la hauteur : sans les 2 px, les boutons
      internes tombaient à 42 px. */
@@ -721,7 +726,7 @@
   position: fixed;
   z-index: var(--z-toast);
   left: 50%;
-  bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--space-4));
+  bottom: calc(var(--bottom-chrome) + var(--space-4));
   transform: translateX(-50%);
   width: min(30rem, calc(100% - var(--space-6)));
   pointer-events: none;

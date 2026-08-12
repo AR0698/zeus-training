@@ -23,11 +23,19 @@ export function Sheet({
   size?: "default" | "wide";
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
+    if (open && !dialog.open) {
+      dialog.showModal();
+      // Sans cela, `showModal` donne le focus au premier élément focusable —
+      // la poignée, qui ne dit rien. Le panneau lui-même est un point de
+      // départ neutre : le lecteur d'écran annonce le titre de la feuille,
+      // puis la tabulation descend dans les choix.
+      panelRef.current?.focus();
+    }
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
@@ -53,12 +61,21 @@ export function Sheet({
         if (event.target === ref.current) onClose();
       }}
     >
-      <div className="sheet-panel" onClick={(event) => event.stopPropagation()}>
+      <div
+        className="sheet-panel"
+        ref={panelRef}
+        tabIndex={-1}
+        onClick={(event) => event.stopPropagation()}
+      >
+        {/* Poignée au doigt uniquement. Au clavier elle prenait le premier
+            focus de la feuille — une barre sans texte, deuxième « Fermer »
+            identique à la croix — alors qu'Échap et la croix suffisent. */}
         <button
           type="button"
           className="sheet-grabber"
           onClick={onClose}
-          aria-label="Fermer"
+          tabIndex={-1}
+          aria-hidden="true"
         />
         <button type="button" className="sheet-close" onClick={onClose} aria-label="Fermer">
           <IconClose size={18} />

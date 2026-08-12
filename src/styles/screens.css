@@ -680,7 +680,7 @@
   max-width: var(--page-max);
   margin: 0 auto;
   padding: var(--space-4) max(var(--space-3), var(--safe-left))
-    calc(9rem + var(--safe-bottom)) max(var(--space-3), var(--safe-right));
+    calc(var(--bottom-chrome) + var(--space-6)) max(var(--space-3), var(--safe-right));
 }
 
 .exercise-card {
@@ -755,8 +755,20 @@
 .set-cell-reps { grid-area: reps; }
 .set-row .validate-button { grid-area: validate; height: 100%; }
 
-.set-cell { display: grid; grid-template-columns: 3.5rem 1fr; align-items: center; gap: var(--space-2); }
+/* Le libellé et le pas-à-pas tiennent sur une ligne tant que le second garde
+   ses 132 px — deux cibles de 44 px plus la valeur. En dessous (un 320 px, ou
+   n'importe quel écran en zoom d'affichage), le pas-à-pas passe à la ligne et
+   récupère toute la largeur au lieu d'être comprimé jusqu'à rogner les
+   chiffres : la colonne de valeur tombait à 4 px et « 12 » se lisait « 1 ». */
+.set-cell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+.set-cell .stepper { flex: 1 1 8.25rem; }
 .set-cell-label {
+  flex: 0 0 3.5rem;
   font-size: var(--text-3xs);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -784,7 +796,10 @@
   border-radius: var(--radius-sm);
   border: 2px solid var(--line-strong);
   background: var(--surface-2);
-  color: transparent;
+  /* Le geste principal de l'écran ne peut pas être une case vide : la coche
+     se montre en sourdine, et c'est le passage au fond d'accent qui dit
+     « validée », pas l'apparition du signe. */
+  color: var(--text-3);
   transition:
     background var(--dur) var(--ease-out),
     border-color var(--dur) var(--ease-out),
@@ -918,7 +933,8 @@
     gap: var(--space-3);
   }
   .set-index { align-self: center; padding-top: 0; }
-  .set-cell { grid-template-columns: 1fr; }
+  /* Le libellé disparaît : l'en-tête de colonne le remplace, et le pas-à-pas
+     occupe seul la ligne. */
   .set-cell-label { display: none; }
   .set-row .validate-button { height: 3rem; }
 }
@@ -928,7 +944,6 @@
   .progress-columns { grid-template-columns: 1fr 1fr; }
   .hero-card { padding: var(--space-8); }
   .exercise-card { padding: var(--space-6); }
-  .session-body { padding-bottom: calc(8rem + var(--safe-bottom)); }
 }
 
 @media (min-width: 76rem) {

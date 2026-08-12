@@ -9,6 +9,7 @@ import {
 import { weightStep } from "../../domain/progression.ts";
 import { elapsedSeconds, sessionProgress } from "../../domain/session.ts";
 import type { Effort, Session, SessionExercise, Settings } from "../../domain/types.ts";
+import { useBottomChrome } from "../../hooks/useBottomChrome.ts";
 import { RestTimerBar } from "../components/RestTimer.tsx";
 import { Sheet } from "../components/Sheet.tsx";
 import { Stepper } from "../components/Stepper.tsx";
@@ -68,8 +69,11 @@ export function SessionScreen({
   const elapsed = elapsedSeconds(session, now);
   const current = session.exercises[session.currentIndex] ?? session.exercises[0];
   const cardRef = useRef<HTMLElement>(null);
+  const footerRef = useRef<HTMLElement>(null);
   const previousId = useRef<string | null>(null);
   const currentId = current?.exerciseId;
+
+  useBottomChrome(footerRef);
 
   // Switching exercise brings the card into view. The first render is skipped
   // on purpose: scrolling the page the instant a session opens would hide the
@@ -78,7 +82,12 @@ export function SessionScreen({
     if (!currentId) return;
     const changed = previousId.current !== null && previousId.current !== currentId;
     previousId.current = currentId;
-    if (changed) cardRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    if (!changed) return;
+    // `scroll-behavior: auto` in the reduced-motion block cannot win against an
+    // explicit `behavior` here — the option always takes precedence over the
+    // stylesheet, so the preference has to be read rather than declared.
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    cardRef.current?.scrollIntoView({ block: "nearest", behavior: still ? "auto" : "smooth" });
   }, [currentId]);
 
   if (!current) return null;
@@ -143,7 +152,7 @@ export function SessionScreen({
 
         {session.exercises.some((entry) => entry.status === "pending" && entry !== current) && (
           <section className="up-next">
-            <span className="kicker">À suivre</span>
+            <h2 className="kicker">À suivre</h2>
             <ul>
               {session.exercises
                 .filter((entry) => entry.status === "pending" && entry.exerciseId !== current.exerciseId)
@@ -165,7 +174,7 @@ export function SessionScreen({
 
         {session.exercises.some((entry) => entry.status === "skipped") && (
           <section className="up-next up-next-skipped">
-            <span className="kicker">Passés</span>
+            <h2 className="kicker">Passés</h2>
             <ul>
               {session.exercises
                 .filter((entry) => entry.status === "skipped")
@@ -183,7 +192,7 @@ export function SessionScreen({
         )}
       </div>
 
-      <footer className="session-footer">
+      <footer className="session-footer" ref={footerRef}>
         {rest.remaining !== null && (
           <RestTimerBar
             remaining={rest.remaining}
@@ -310,8 +319,12 @@ function ExerciseCard({
             <span className="set-index tabular">
               {setIndex + 1}
               {set.pr && (
-                <span className="pr-flag" title="Record personnel">
+                // Toutes les icônes sont `aria-hidden`, et un `title` ne se
+                // montre pas au doigt : sans ce mot, le record n'existe que
+                // pour qui voit la coupe.
+                <span className="pr-flag">
                   <IconTrophy size={11} />
+                  <span className="visually-hidden">Record personnel</span>
                 </span>
               )}
             </span>
@@ -367,6 +380,14 @@ function ExerciseCard({
           </div>
         </div>
       </div>
+
+      {/* La zone vit dès le montage de la carte : un `role="status"` inséré en
+          même temps que son texte n'est pas annoncé de façon fiable. */}
+      <p className="visually-hidden" role="status">
+        {allSetsDone
+          ? `${entry.replacedBy ?? entry.name} terminé. Indique la difficulté ressentie.`
+          : ""}
+      </p>
 
       {allSetsDone && (
         <div className="effort-block">

@@ -120,7 +120,7 @@ export function Stepper({
         <button
           type="button"
           className="stepper-value"
-          aria-label={`${label} : ${formatNumber(value)} ${unit}. Modifier la valeur`}
+          aria-label={`${label} : ${formatNumber(value)}${unit ? ` ${unit}` : ""}. Modifier la valeur`}
           onClick={() => {
             setDraft(formatNumber(value));
             setEditing(true);

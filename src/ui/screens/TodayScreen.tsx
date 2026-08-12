@@ -212,9 +212,13 @@ function WeekRing({ done, target, streak }: { done: number; target: number; stre
         <small>/{target} sem.</small>
       </div>
       {streak > 1 && (
-        <span className="streak-badge" title={`${streak} semaines d'affilée`}>
+        <span className="streak-badge">
           <IconFlame size={13} />
           <span className="tabular">{streak}</span>
+          {/* Même défaut que la coupe du record : la flamme est `aria-hidden`
+              et un `title` ne se montre pas au doigt, donc le nombre était
+              annoncé seul — « 4 », sans dire 4 de quoi. */}
+          <span className="visually-hidden">semaines d&apos;affilée</span>
         </span>
       )}
     </div>
