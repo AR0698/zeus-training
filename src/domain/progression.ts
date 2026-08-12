@@ -127,6 +127,21 @@ export function openingWeights(exercise: ExerciseTemplate, factor: number): numb
 }
 
 /**
+ * Aligns loads coming out of a session on the sets the program declares today.
+ *
+ * A program can be edited while its session runs: a set added mid-session keeps
+ * the target the editor gave it instead of inheriting another one, and a set
+ * removed mid-session leaves no orphan load behind. Without this the exercise
+ * ends up with fewer loads than sets — the one invariant every screen reads.
+ */
+function alignToSets(fromSession: number[], existing: number[], sets: number): number[] {
+  return Array.from(
+    { length: sets },
+    (_, index) => fromSession[index] ?? existing[index] ?? existing.at(-1) ?? 0,
+  );
+}
+
+/**
  * Writes a finished session back into the programs.
  *
  * Matching is by `exerciseId`, never by position, so a program edited during
@@ -147,8 +162,8 @@ export function applySessionToPrograms(programs: Program[], session: Session): P
         if (!decision) return exercise;
         return {
           ...exercise,
-          lastWeights: decision.lastWeights,
-          targetWeights: decision.nextWeights,
+          lastWeights: alignToSets(decision.lastWeights, exercise.lastWeights, exercise.sets),
+          targetWeights: alignToSets(decision.nextWeights, exercise.targetWeights, exercise.sets),
         };
       }),
     };

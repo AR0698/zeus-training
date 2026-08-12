@@ -1,4 +1,5 @@
 import { EXERCISE_CATALOG, type CatalogEntry, type Equipment } from "./catalog/index.ts";
+import { clampLoad } from "./progression.ts";
 import { normalise } from "./text.ts";
 import type { ExerciseTemplate, MuscleGroup, Program } from "./types.ts";
 
@@ -176,6 +177,11 @@ export function patchExercise(
       repMax,
       restSeconds: Math.max(0, Math.min(600, Math.round(merged.restSeconds))),
       alternatives: merged.alternatives.map((item) => item.trim()).filter(Boolean),
+      // Le champ de saisie accepte n'importe quelle décimale : on repasse par la
+      // même normalisation que la progression, sinon une cible à 12,37 kg
+      // ressort telle quelle dans la séance suivante.
+      targetWeights: merged.targetWeights.map((weight) => clampLoad(weight)),
+      lastWeights: merged.lastWeights.map((weight) => clampLoad(weight)),
     },
     merged.sets,
   );

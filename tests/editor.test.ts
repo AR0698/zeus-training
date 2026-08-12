@@ -92,6 +92,21 @@ test("patchExercise repairs the invariants an editor could break", () => {
   assert.equal(resized.targetWeights.length, 6);
 });
 
+test("patchExercise ramène les charges saisies sur un cran réel", () => {
+  const source = EXERCISE_LIBRARY.find((exercise) => exercise.id === "chest-press")!;
+
+  // Le champ de saisie accepte les décimales : 12,37 kg n'existe sur aucune barre.
+  const typed = patchExercise(source, { targetWeights: [12.37, -5, 20.2] });
+  assert.deepEqual(typed.targetWeights, [12.5, 0, 20], "arrondi au demi-kilo, jamais négatif");
+
+  const logged = patchExercise(source, { lastWeights: [-1, 30.26, 30] });
+  assert.deepEqual(logged.lastWeights, [0, 30.5, 30]);
+
+  // La série ajoutée recopie une charge déjà normalisée.
+  const grown = patchExercise(source, { sets: 4, targetWeights: [10, 20, 30.3] });
+  assert.deepEqual(grown.targetWeights, [10, 20, 30.5, 30.5]);
+});
+
 test("un exercice peut être ajouté, déplacé et retiré", () => {
   let state = base();
   const programId = first(state).id;

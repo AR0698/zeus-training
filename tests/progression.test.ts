@@ -10,7 +10,7 @@ import {
 } from "../src/domain/progression.ts";
 import { SEED_PROGRAMS } from "../src/domain/seed.ts";
 import { createSession } from "../src/domain/session.ts";
-import type { SessionExercise } from "../src/domain/types.ts";
+import type { Program, Session, SessionExercise } from "../src/domain/types.ts";
 
 function makeEntry(overrides: Partial<SessionExercise> = {}): SessionExercise {
   return {
@@ -35,6 +35,28 @@ function makeEntry(overrides: Partial<SessionExercise> = {}): SessionExercise {
     ],
     ...overrides,
   };
+}
+
+/** Une séance minimale portant un seul exercice, rattachée à un programme. */
+function makeSession(program: Program, entry: SessionExercise): Session {
+  return {
+    id: "s1",
+    programId: program.id,
+    programName: program.name,
+    accent: program.accent,
+    startedAt: 0,
+    currentIndex: 0,
+    exercises: [entry],
+  };
+}
+
+/** Toutes les séries bouclées en haut de fourchette : la progression monte. */
+function makeTopOfRangeEntry(exerciseId: string, weights: number[], repMax: number): SessionExercise {
+  return makeEntry({
+    exerciseId,
+    repMax,
+    sets: weights.map((weight) => ({ weight, reps: repMax, done: true, pr: false })),
+  });
 }
 
 test("weightStep uses gym-realistic increments", () => {
@@ -138,6 +160,54 @@ test("progression is written back by exercise id, not by position", () => {
     );
     assert.deepEqual(exercise.targetWeights, expected, exercise.id);
   }
+});
+
+test("une série ajoutée pendant la séance garde la cible déjà saisie", () => {
+  const program = SEED_PROGRAMS[0]!;
+  const source = program.exercises[0]!; // Chest Press : 3 séries, cibles 20 / 25 / 30.
+  const session = makeSession(
+    program,
+    makeTopOfRangeEntry(source.id, source.targetWeights, source.repMax),
+  );
+
+  // Pendant la séance, l'éditeur est passé à 5 séries. Les deux dernières
+  // n'ont pas été jouées : elles gardent la cible que l'éditeur a posée.
+  const edited: Program = {
+    ...program,
+    exercises: [
+      {
+        ...source,
+        sets: 5,
+        targetWeights: [20, 25, 30, 32.5, 35],
+        lastWeights: [20, 25, 30, 30, 30],
+      },
+    ],
+  };
+
+  const exercise = applySessionToPrograms([edited], session)[0]!.exercises[0]!;
+  assert.equal(exercise.targetWeights.length, exercise.sets, "une charge par série déclarée");
+  assert.equal(exercise.lastWeights.length, exercise.sets);
+  assert.deepEqual(exercise.targetWeights, [22.5, 27.5, 32.5, 32.5, 35]);
+  assert.deepEqual(exercise.lastWeights, [20, 25, 30, 30, 30]);
+});
+
+test("une série retirée pendant la séance ne laisse pas de charge orpheline", () => {
+  const program = SEED_PROGRAMS[0]!;
+  const source = program.exercises[0]!;
+  const session = makeSession(
+    program,
+    makeTopOfRangeEntry(source.id, source.targetWeights, source.repMax),
+  );
+
+  const edited: Program = {
+    ...program,
+    exercises: [{ ...source, sets: 2, targetWeights: [20, 25], lastWeights: [20, 25] }],
+  };
+
+  const exercise = applySessionToPrograms([edited], session)[0]!.exercises[0]!;
+  assert.equal(exercise.targetWeights.length, 2, "la troisième série n'existe plus");
+  assert.deepEqual(exercise.targetWeights, [22.5, 27.5]);
+  assert.deepEqual(exercise.lastWeights, [20, 25]);
 });
 
 test("the rotation walks the Upper/Lower cycle and wraps", () => {
