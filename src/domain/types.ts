@@ -119,6 +119,8 @@ export type Settings = {
   /** Fallback rest duration when an exercise has none, in seconds. */
   defaultRestSeconds: number;
   vibration: boolean;
+  /** Short beeps at the end of the rest. Off by default: a gym phone that beeps unasked surprises everyone. */
+  sounds: boolean;
   /** Hold a screen wake lock during a session. */
   keepAwake: boolean;
   displayName: string;

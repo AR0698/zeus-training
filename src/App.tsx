@@ -20,6 +20,7 @@ import { downloadBackup } from "./storage/backup.ts";
 import { useHaptics } from "./hooks/useHaptics.ts";
 import { useNow } from "./hooks/useNow.ts";
 import { useRestTimer } from "./hooks/useRestTimer.ts";
+import { useRestCues, useSounds } from "./hooks/useSounds.ts";
 import { useTheme } from "./hooks/useTheme.ts";
 import { useWakeLock } from "./hooks/useWakeLock.ts";
 import { useStore } from "./state/store.tsx";
@@ -71,6 +72,7 @@ export function App() {
 
   const { toast, show, dismiss } = useToaster();
   const haptics = useHaptics(state.settings.vibration);
+  const sounds = useSounds(state.settings.sounds);
   // One clock for the whole app: to the second during a session, to the minute
   // otherwise. No screen ever calls Date.now() while rendering.
   const now = useNow(true, state.session === null ? 60_000 : 1000);
@@ -84,6 +86,7 @@ export function App() {
       show({ message: "Repos terminé — série suivante", tone: "success" });
     }, [haptics, show]),
   );
+  useRestCues(rest.remaining, sounds);
 
   const notify = useCallback(
     (message: string, tone: ToastTone = "neutral") => show({ message, tone }),
@@ -433,6 +436,7 @@ export function App() {
             state={state}
             now={now}
             onUpdate={(patch) => dispatch({ type: "settings/update", patch })}
+            onPreviewSound={() => sounds.preview("end")}
             onExport={exportBackup}
             onImport={importState}
             onReset={() => {

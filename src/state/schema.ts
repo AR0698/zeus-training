@@ -271,6 +271,8 @@ function parseSettings(raw: unknown): Settings {
     autoRest: bool(raw.autoRest, DEFAULT_SETTINGS.autoRest),
     defaultRestSeconds: Math.min(600, Math.max(15, Math.round(num(raw.defaultRestSeconds, DEFAULT_SETTINGS.defaultRestSeconds)))),
     vibration: bool(raw.vibration, DEFAULT_SETTINGS.vibration),
+    // Absent des sauvegardes d'avant les sons : elles restent silencieuses.
+    sounds: bool(raw.sounds, DEFAULT_SETTINGS.sounds),
     keepAwake: bool(raw.keepAwake, DEFAULT_SETTINGS.keepAwake),
     displayName: str(raw.displayName, DEFAULT_SETTINGS.displayName).slice(0, 40),
   };
