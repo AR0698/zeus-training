@@ -120,6 +120,11 @@ export function ProgressScreen({ state, now }: { state: AppState; now: number })
               <div>
                 <strong>{entry.programName}</strong>
                 <span className="muted">{entry.note}</span>
+                {entry.exerciseNotes.map((item) => (
+                  <span className="history-note" key={item.exerciseId}>
+                    <b>{item.name}</b> — {item.note}
+                  </span>
+                ))}
               </div>
               <span className="history-score tabular">
                 {entry.completedExercises}/{entry.totalExercises}

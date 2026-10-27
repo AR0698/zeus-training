@@ -7,9 +7,10 @@ import {
   unitLabel,
 } from "../../domain/format.ts";
 import { weightStep } from "../../domain/progression.ts";
-import { elapsedSeconds, sessionProgress } from "../../domain/session.ts";
-import type { Effort, Session, SessionExercise, Settings } from "../../domain/types.ts";
+import { elapsedSeconds, lastExerciseNote, sessionProgress } from "../../domain/session.ts";
+import type { Effort, HistoryEntry, Session, SessionExercise, Settings } from "../../domain/types.ts";
 import { useBottomChrome } from "../../hooks/useBottomChrome.ts";
+import { ExerciseNoteField, ExerciseNoteRecall } from "../components/ExerciseNoteField.tsx";
 import { RestTimerBar } from "../components/RestTimer.tsx";
 import { Sheet } from "../components/Sheet.tsx";
 import { Stepper } from "../components/Stepper.tsx";
@@ -37,6 +38,7 @@ export type SessionHandlers = {
   setValue: (exerciseId: string, setIndex: number, field: "weight" | "reps", value: number) => void;
   toggleSet: (entry: SessionExercise, setIndex: number) => void;
   setEffort: (exerciseId: string, effort: Effort) => void;
+  setNote: (exerciseId: string, note: string) => void;
   skip: (entry: SessionExercise) => void;
   resume: (exerciseId: string) => void;
   focus: (exerciseId: string) => void;
@@ -53,12 +55,15 @@ export type SessionHandlers = {
 
 export function SessionScreen({
   session,
+  history,
   settings,
   now,
   rest,
   handlers,
 }: {
   session: Session;
+  /** Newest first — only read to recall the last note of each exercise. */
+  history: readonly HistoryEntry[];
   settings: Settings;
   now: number;
   rest: { remaining: number | null; total: number; add: (s: number) => void; stop: () => void };
@@ -148,7 +153,16 @@ export function SessionScreen({
       </header>
 
       <div className="session-body">
-        <ExerciseCard ref={cardRef} entry={current} index={session.currentIndex} total={session.exercises.length} settings={settings} handlers={handlers} />
+        <ExerciseCard
+          ref={cardRef}
+          entry={current}
+          index={session.currentIndex}
+          total={session.exercises.length}
+          previousNote={lastExerciseNote(history, current.exerciseId)}
+          now={now}
+          settings={settings}
+          handlers={handlers}
+        />
 
         {session.exercises.some((entry) => entry.status === "pending" && entry !== current) && (
           <section className="up-next">
@@ -266,6 +280,8 @@ function ExerciseCard({
   entry,
   index,
   total,
+  previousNote,
+  now,
   settings,
   handlers,
 }: {
@@ -273,6 +289,8 @@ function ExerciseCard({
   entry: SessionExercise;
   index: number;
   total: number;
+  previousNote: { note: string; date: number } | null;
+  now: number;
   settings: Settings;
   handlers: SessionHandlers;
 }) {
@@ -290,6 +308,7 @@ function ExerciseCard({
           <h2 id={`exercise-${entry.exerciseId}`}>{entry.replacedBy ?? entry.name}</h2>
           {entry.replacedBy && <span className="swap-note">remplace {entry.name}</span>}
           <p className="exercise-cue">{entry.cue}</p>
+          {previousNote && <ExerciseNoteRecall previous={previousNote} now={now} />}
         </div>
         {/* Le mot compte autant que l'icône : c'est la seule porte vers le
             dessin du mouvement, et un (i) seul ne dit pas ce qu'il y a
@@ -413,6 +432,14 @@ function ExerciseCard({
           </div>
         </div>
       )}
+
+      <ExerciseNoteField
+        key={entry.exerciseId}
+        exerciseId={entry.exerciseId}
+        note={entry.note}
+        hasPrevious={previousNote !== null}
+        onChange={(note) => handlers.setNote(entry.exerciseId, note)}
+      />
 
       <div className="exercise-actions">
         <button type="button" className="button button-quiet" onClick={() => handlers.replace(entry)}>

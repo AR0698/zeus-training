@@ -137,6 +137,7 @@ function historyAt(dates: number[]): HistoryEntry[] {
     volume: 5000 + index * 100,
     note: "",
     personalRecords: [],
+    exerciseNotes: [],
   }));
 }
 

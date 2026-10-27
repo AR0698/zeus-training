@@ -44,6 +44,7 @@ export type Action =
   | { type: "session/adjust"; exerciseId: string; setIndex: number; field: "weight" | "reps"; delta: number }
   | { type: "session/toggleSet"; exerciseId: string; setIndex: number; now: number }
   | { type: "session/setEffort"; exerciseId: string; effort: Effort }
+  | { type: "session/setNote"; exerciseId: string; note: string }
   | { type: "session/skip"; exerciseId: string }
   | { type: "session/resume"; exerciseId: string }
   | { type: "session/replace"; exerciseId: string; alternative: string }

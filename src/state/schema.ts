@@ -1,4 +1,5 @@
 import { catalogTemplate } from "../domain/catalog/index.ts";
+import { NOTE_MAX_LENGTH, cleanNote } from "../domain/session.ts";
 import {
   CURRENT_VERSION,
   DEFAULT_SETTINGS,
@@ -8,6 +9,7 @@ import {
 import type {
   AppState,
   Effort,
+  ExerciseNote,
   ExerciseTemplate,
   HistoryEntry,
   MuscleGroup,
@@ -197,6 +199,8 @@ function parseSessionExercise(raw: unknown): SessionExercise | null {
     effort: typeof raw.effort === "string" ? oneOf(raw.effort, EFFORTS, "good") : null,
     status: oneOf(raw.status, STATUSES, "pending"),
     replacedBy: typeof raw.replacedBy === "string" ? raw.replacedBy : null,
+    // Absent before notes existed. Kept untrimmed: the user may still be typing.
+    note: str(raw.note, "").slice(0, NOTE_MAX_LENGTH),
   };
 }
 
@@ -228,6 +232,20 @@ function parseSession(
   };
 }
 
+/** Absent from entries saved before notes existed — they simply have none. */
+function parseExerciseNotes(raw: unknown): ExerciseNote[] {
+  if (!Array.isArray(raw)) return [];
+  const notes: ExerciseNote[] = [];
+  for (const item of raw) {
+    if (!isObject(item)) continue;
+    const exerciseId = str(item.exerciseId, "");
+    const note = cleanNote(str(item.note, ""));
+    if (!exerciseId || !note) continue;
+    notes.push({ exerciseId, name: str(item.name, exerciseId), note });
+  }
+  return notes;
+}
+
 function parseHistory(raw: unknown): HistoryEntry[] {
   if (!Array.isArray(raw)) return [];
   const entries: HistoryEntry[] = [];
@@ -247,6 +265,7 @@ function parseHistory(raw: unknown): HistoryEntry[] {
       completedSets: Math.max(0, Math.round(num(item.completedSets, 0))),
       volume: Math.max(0, Math.round(num(item.volume, 0))),
       note: str(item.note, ""),
+      exerciseNotes: parseExerciseNotes(item.exerciseNotes),
       personalRecords: Array.isArray(item.personalRecords)
         ? item.personalRecords.filter((value): value is string => typeof value === "string")
         : [],

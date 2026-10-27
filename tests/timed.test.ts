@@ -36,6 +36,7 @@ function timedEntry(durations: number[]): SessionExercise {
     effort: null,
     status: "done",
     replacedBy: null,
+    note: "",
     sets: durations.map((weight) => ({ weight, reps: 0, done: true, pr: false })),
   };
 }
