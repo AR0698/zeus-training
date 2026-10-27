@@ -36,6 +36,8 @@ export type Action =
     }
   | { type: "session/start"; program: Program; now: number; id: string }
   | { type: "session/abandon" }
+  | { type: "session/restoreAbandoned" }
+  | { type: "session/discardAbandoned" }
   | { type: "session/finish"; now: number }
   | { type: "session/focus"; exerciseId: string }
   | { type: "session/setValue"; exerciseId: string; setIndex: number; field: "weight" | "reps"; value: number }
@@ -53,6 +55,7 @@ export const UNDOABLE: ReadonlySet<Action["type"]> = new Set([
   "session/skip",
   "session/finish",
   "session/abandon",
+  "session/discardAbandoned",
   "session/removeSet",
   "state/reset",
   "state/replace",

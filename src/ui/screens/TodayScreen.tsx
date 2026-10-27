@@ -1,7 +1,8 @@
 import { formatLoad, formatRelativeDay, formatRepRange } from "../../domain/format.ts";
 import { LAYOFF_DAYS, daysBetween, nextProgram } from "../../domain/progression.ts";
+import { sessionProgress } from "../../domain/session.ts";
 import { lastSessionDate, overview, pendingIncreases } from "../../domain/stats.ts";
-import type { AppState, Program } from "../../domain/types.ts";
+import type { AppState, Program, Session } from "../../domain/types.ts";
 import {
   IconAlert,
   IconArrowRight,
@@ -11,6 +12,7 @@ import {
   IconFlame,
   IconTrend,
   IconTrophy,
+  IconUndo,
 } from "../icons.tsx";
 import { detailFromTemplate, type ExerciseDetail } from "../types.ts";
 
@@ -22,12 +24,16 @@ export function TodayScreen({
   onStart,
   onOpenDetail,
   onOpenPrograms,
+  onRestoreAbandoned,
+  onDiscardAbandoned,
 }: {
   state: AppState;
   now: number;
   onStart: (program: Program) => void;
   onOpenDetail: (detail: ExerciseDetail) => void;
   onOpenPrograms: () => void;
+  onRestoreAbandoned: () => void;
+  onDiscardAbandoned: () => void;
 }) {
   const recommended = nextProgram(state.programs, state.lastCompletedProgramId);
   const stats = overview(state, now);
@@ -60,6 +66,15 @@ export function TodayScreen({
             proposées 10&nbsp;% en dessous de tes cibles, le temps de retrouver la technique.
           </p>
         </div>
+      )}
+
+      {state.abandonedSession && (
+        <AbandonedSessionCard
+          session={state.abandonedSession}
+          now={now}
+          onRestore={onRestoreAbandoned}
+          onDiscard={onDiscardAbandoned}
+        />
       )}
 
       {recommended === null ? (
@@ -186,6 +201,43 @@ export function TodayScreen({
         </div>
       </section>
     </>
+  );
+}
+
+function AbandonedSessionCard({
+  session,
+  now,
+  onRestore,
+  onDiscard,
+}: {
+  session: Session;
+  now: number;
+  onRestore: () => void;
+  onDiscard: () => void;
+}) {
+  const { doneSets, totalSets } = sessionProgress(session);
+  const plural = doneSets > 1 ? "s" : "";
+
+  return (
+    <section className="banner banner-accent abandoned-card" aria-labelledby="abandoned-title">
+      <IconUndo size={18} />
+      <div className="abandoned-body">
+        <p>
+          <strong id="abandoned-title">{session.programName} a été abandonnée.</strong>{" "}
+          Commencée {formatRelativeDay(session.startedAt, now)} · {doneSets}/
+          {totalSets} série{plural} validée{plural}. Tu peux la reprendre là où tu l&apos;as
+          laissée.
+        </p>
+        <div className="abandoned-actions">
+          <button type="button" className="button button-accent" onClick={onRestore}>
+            Reprendre la séance
+          </button>
+          <button type="button" className="button button-ghost" onClick={onDiscard}>
+            Oublier
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }
 

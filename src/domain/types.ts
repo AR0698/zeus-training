@@ -139,6 +139,12 @@ export type AppState = {
   backupPromptedAt: number | null;
   programs: Program[];
   session: Session | null;
+  /**
+   * La dernière séance abandonnée, gardée pour pouvoir la reprendre : un
+   * « Abandonner » touché par erreur ne doit rien coûter. Effacée dès qu'une
+   * nouvelle séance démarre.
+   */
+  abandonedSession: Session | null;
   history: HistoryEntry[];
   records: Record<string, PersonalRecord>;
   lastCompletedProgramId: string | null;

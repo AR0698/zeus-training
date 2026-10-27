@@ -200,7 +200,12 @@ function parseSessionExercise(raw: unknown): SessionExercise | null {
   };
 }
 
-function parseSession(raw: unknown, now: number, issues: Issues): Session | null {
+function parseSession(
+  raw: unknown,
+  now: number,
+  issues: Issues,
+  unreadable = "Séance en cours illisible — elle a été écartée.",
+): Session | null {
   if (!isObject(raw)) return null;
   const rawExercises = Array.isArray(raw.exercises) ? raw.exercises : [];
   const exercises = rawExercises
@@ -208,7 +213,7 @@ function parseSession(raw: unknown, now: number, issues: Issues): Session | null
     .filter((entry): entry is SessionExercise => entry !== null);
 
   if (exercises.length === 0) {
-    issues.push("Séance en cours illisible — elle a été écartée.");
+    issues.push(unreadable);
     return null;
   }
 
@@ -364,6 +369,13 @@ export function parseAppState(raw: unknown, now: number): ParseResult {
     backupPromptedAt: time(source.backupPromptedAt),
     programs,
     session: parseSession(source.session, now, issues),
+    // Migration v2 → v3 : le champ n'existait pas, l'absence vaut « rien à reprendre ».
+    abandonedSession: parseSession(
+      source.abandonedSession,
+      now,
+      issues,
+      "Séance abandonnée illisible — elle ne pourra pas être reprise.",
+    ),
     history,
     records: parseRecords(source.records),
     lastCompletedProgramId:

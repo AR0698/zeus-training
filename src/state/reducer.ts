@@ -221,11 +221,23 @@ export function reducer(state: AppState, action: Action): AppState {
         id: action.id,
         lastSessionDate: lastSessionDate(state.history),
       });
-      return { ...state, session };
+      // Une nouvelle séance remplace celle qu'on aurait pu reprendre.
+      return { ...state, session, abandonedSession: null };
     }
 
+    // Abandonner met la séance de côté au lieu de l'effacer : elle reste
+    // reprenable depuis l'accueil jusqu'au démarrage d'une autre.
     case "session/abandon":
-      return { ...state, session: null };
+      if (!state.session) return state;
+      return { ...state, session: null, abandonedSession: state.session };
+
+    case "session/restoreAbandoned":
+      // Jamais par-dessus une séance en cours : elle serait perdue à son tour.
+      if (state.session || !state.abandonedSession) return state;
+      return { ...state, session: state.abandonedSession, abandonedSession: null };
+
+    case "session/discardAbandoned":
+      return { ...state, abandonedSession: null };
 
     case "session/finish": {
       if (!state.session) return state;
