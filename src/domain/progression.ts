@@ -130,11 +130,15 @@ export function openingWeights(exercise: ExerciseTemplate, factor: number): numb
  * Writes a finished session back into the programs.
  *
  * Matching is by `exerciseId`, never by position, so a program edited during
- * the session cannot shift a log onto the wrong movement.
+ * the session cannot shift a log onto the wrong movement. A movement replaced
+ * for this session only is left untouched.
  */
 export function applySessionToPrograms(programs: Program[], session: Session): Program[] {
   const decisions = new Map<string, ProgressionDecision>();
   for (const entry of session.exercises) {
+    // Charges soulevées sur une autre machine : elles ne disent rien de celle
+    // du programme, qui garde ses cibles telles quelles.
+    if (entry.replacedBy !== null) continue;
     decisions.set(entry.exerciseId, decideProgression(entry));
   }
 
