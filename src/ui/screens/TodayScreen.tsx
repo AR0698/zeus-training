@@ -1,4 +1,4 @@
-import { formatLoad, formatRelativeDay, formatRepRange } from "../../domain/format.ts";
+import { formatLoad, formatMinutes, formatRelativeDay, formatRepRange } from "../../domain/format.ts";
 import { LAYOFF_DAYS, daysBetween, nextProgram } from "../../domain/progression.ts";
 import { sessionProgress } from "../../domain/session.ts";
 import { lastSessionDate, overview, pendingIncreases } from "../../domain/stats.ts";
@@ -96,7 +96,7 @@ export function TodayScreen({
           <span className="hero-chip">Recommandé</span>
           <span className="hero-duration">
             <IconClock size={15} />
-            {recommended.estimatedMinutes} min
+            {formatMinutes(recommended.estimatedMinutes)}
           </span>
         </div>
 
@@ -162,7 +162,7 @@ export function TodayScreen({
             <h3>{last ? last.programName : "Aucune séance"}</h3>
             <p>
               {last
-                ? `${formatRelativeDay(last.date, now)} · ${last.durationMinutes} min · ${last.completedExercises}/${last.totalExercises} exercices`
+                ? `${formatRelativeDay(last.date, now)} · ${formatMinutes(last.durationMinutes)} · ${last.completedExercises}/${last.totalExercises} exercices`
                 : "Ton historique et tes records apparaîtront ici après la première séance."}
             </p>
           </div>
@@ -194,7 +194,7 @@ export function TodayScreen({
               <strong>{program.name}</strong>
               <small>{program.focus}</small>
               <span className="program-tile-meta tabular">
-                {program.exercises.length} exercices · {program.estimatedMinutes} min
+                {program.exercises.length} exercices · {formatMinutes(program.estimatedMinutes)}
               </span>
             </button>
           ))}

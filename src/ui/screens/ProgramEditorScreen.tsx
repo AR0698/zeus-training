@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { formatRepRange, unitLabel } from "../../domain/format.ts";
-import { ACCENT_LABELS, ACCENTS } from "../../domain/library.ts";
+import { formatMinutes, formatRepRange, unitLabel } from "../../domain/format.ts";
+import { ACCENT_LABELS, ACCENTS, SESSION_MINUTES } from "../../domain/library.ts";
 import type { ExerciseTemplate, Program } from "../../domain/types.ts";
 import { Sheet } from "../components/Sheet.tsx";
+import { Stepper } from "../components/Stepper.tsx";
 import {
   IconAlert,
   IconArrowDown,
@@ -123,21 +124,40 @@ export function ProgramEditorScreen({
             />
           </label>
 
-          <label className="field">
-            <span className="field-label">Durée estimée</span>
-            <input
-              className="field-input field-input-short tabular"
-              type="number"
-              inputMode="numeric"
-              min={5}
-              max={240}
-              value={program.estimatedMinutes}
-              onChange={(event) =>
-                handlers.update({ estimatedMinutes: Number(event.target.value) || 5 })
-              }
-            />
-            <span className="field-help">En minutes, échauffement compris.</span>
-          </label>
+          <div className="field" role="group" aria-labelledby="program-duration-label">
+            <span className="field-label" id="program-duration-label">Durée estimée</span>
+            <div className="duration-stepper">
+              <Stepper
+                value={program.estimatedMinutes}
+                unit=""
+                step={SESSION_MINUTES.step}
+                min={SESSION_MINUTES.min}
+                label="Durée estimée"
+                formatValue={formatMinutes}
+                onAdjust={(delta) =>
+                  handlers.update({ estimatedMinutes: program.estimatedMinutes + delta })
+                }
+                onSet={(value) => handlers.update({ estimatedMinutes: value })}
+              />
+            </div>
+            <div className="chip-row">
+              {SESSION_MINUTES.presets.map((minutes) => (
+                <button
+                  type="button"
+                  key={minutes}
+                  className={`chip ${program.estimatedMinutes === minutes ? "is-active" : ""}`}
+                  aria-pressed={program.estimatedMinutes === minutes}
+                  onClick={() => handlers.update({ estimatedMinutes: minutes })}
+                >
+                  {formatMinutes(minutes)}
+                </button>
+              ))}
+            </div>
+            <span className="field-help">
+              Échauffement compris, jusqu&apos;à {formatMinutes(SESSION_MINUTES.max)}. Touche la
+              valeur pour la saisir en minutes.
+            </span>
+          </div>
 
           <div className="field" role="group" aria-labelledby="program-accent-label">
             <span className="field-label" id="program-accent-label">Couleur</span>

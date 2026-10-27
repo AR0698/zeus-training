@@ -1,4 +1,4 @@
-import { formatNumber, formatRepRange, unitLabel } from "../../domain/format.ts";
+import { formatMinutes, formatNumber, formatRepRange, unitLabel } from "../../domain/format.ts";
 import type { AppState, Program } from "../../domain/types.ts";
 import { IconArrowRight, IconPencil, IconPlus } from "../icons.tsx";
 import { detailFromTemplate, type ExerciseDetail } from "../types.ts";
@@ -51,7 +51,7 @@ export function ProgramsScreen({
                   <h2>{program.name}</h2>
                   <p className="muted">
                     {program.focus ? `${program.focus} · ` : ""}
-                    {program.estimatedMinutes} min
+                    {formatMinutes(program.estimatedMinutes)}
                   </p>
                 </div>
                 <button
