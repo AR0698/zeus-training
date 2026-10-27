@@ -161,6 +161,7 @@ export function App() {
         dispatch({ type: "session/setEffort", exerciseId, effort });
         haptics.tap();
       },
+      setNote: (exerciseId, note) => dispatch({ type: "session/setNote", exerciseId, note }),
       skip: (entry) => {
         dispatch({ type: "session/skip", exerciseId: entry.exerciseId });
         show({
@@ -325,6 +326,7 @@ export function App() {
       <>
         <SessionScreen
           session={state.session}
+          history={state.history}
           settings={state.settings}
           now={now}
           rest={rest}

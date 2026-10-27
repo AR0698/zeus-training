@@ -77,6 +77,8 @@ export type SessionExercise = {
   status: SessionExerciseStatus;
   /** Name of the substitute movement when the machine was taken. */
   replacedBy: string | null;
+  /** Free text typed during the session ("siège cran 4"). Empty when unused. */
+  note: string;
 };
 
 export type Session = {
@@ -87,6 +89,14 @@ export type Session = {
   startedAt: number;
   currentIndex: number;
   exercises: SessionExercise[];
+};
+
+/** A per-exercise note kept with the session that produced it. */
+export type ExerciseNote = {
+  exerciseId: string;
+  /** Name shown at the time, substitute included, so the note still reads right. */
+  name: string;
+  note: string;
 };
 
 export type HistoryEntry = {
@@ -100,7 +110,10 @@ export type HistoryEntry = {
   completedSets: number;
   /** Sum of weight × reps over validated sets (seconds-based work excluded). */
   volume: number;
+  /** Status line generated at the end of the session — not typed by the user. */
   note: string;
+  /** What the user wrote on each exercise, in session order. */
+  exerciseNotes: ExerciseNote[];
   /** Short names of exercises that produced a personal record. */
   personalRecords: string[];
 };

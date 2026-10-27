@@ -1,7 +1,7 @@
 import { ACCENTS, makeEmptyProgram, patchExercise } from "../domain/library.ts";
 import { completeOnboarding } from "../domain/onboarding.ts";
 import { clampLoad, applySessionToPrograms, weightStep } from "../domain/progression.ts";
-import { createSession, beatsRecord, finishSession } from "../domain/session.ts";
+import { NOTE_MAX_LENGTH, createSession, beatsRecord, finishSession } from "../domain/session.ts";
 import { createInitialState } from "../domain/seed.ts";
 import { lastSessionDate } from "../domain/stats.ts";
 import type { AppState, Program, Session, SessionExercise } from "../domain/types.ts";
@@ -312,6 +312,17 @@ export function reducer(state: AppState, action: Action): AppState {
         session: mapExercise(state.session, action.exerciseId, (entry) => ({
           ...entry,
           effort: entry.effort === action.effort ? null : action.effort,
+        })),
+      };
+    }
+
+    case "session/setNote": {
+      if (!state.session) return state;
+      return {
+        ...state,
+        session: mapExercise(state.session, action.exerciseId, (entry) => ({
+          ...entry,
+          note: action.note.slice(0, NOTE_MAX_LENGTH),
         })),
       };
     }
