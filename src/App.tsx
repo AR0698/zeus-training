@@ -138,6 +138,21 @@ export function App() {
     [dispatch, haptics, rest],
   );
 
+  // Reprendre une séance abandonnée est un choix explicite : la feuille
+  // « séance oubliée » ne doit pas la reposer aussitôt, même si elle date.
+  const restoreAbandoned = useCallback(() => {
+    dispatch({ type: "session/restoreAbandoned" });
+    haptics.confirm();
+    setStaleDismissed(true);
+    setSessionHidden(false);
+    setTab("today");
+  }, [dispatch, haptics]);
+
+  const discardAbandoned = useCallback(() => {
+    dispatch({ type: "session/discardAbandoned" });
+    show({ message: "Séance abandonnée oubliée", action: { label: "Annuler", run: undo } });
+  }, [dispatch, show, undo]);
+
   const handlers = useMemo<SessionHandlers>(
     () => ({
       adjust: (exerciseId, setIndex, field, delta) =>
@@ -426,6 +441,8 @@ export function App() {
             onStart={startSession}
             onOpenDetail={setDetail}
             onOpenPrograms={() => setTab("programs")}
+            onRestoreAbandoned={restoreAbandoned}
+            onDiscardAbandoned={discardAbandoned}
           />
         )}
         {!editedProgram && tab === "programs" && (
