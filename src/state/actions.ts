@@ -48,6 +48,8 @@ export type Action =
   | { type: "session/skip"; exerciseId: string }
   | { type: "session/resume"; exerciseId: string }
   | { type: "session/replace"; exerciseId: string; alternative: string }
+  /** Le remplaçant devient l'exercice du programme, dès la prochaine séance. */
+  | { type: "session/keepReplacement"; exerciseId: string; alternative: string }
   | { type: "session/addSet"; exerciseId: string }
   | { type: "session/removeSet"; exerciseId: string };
 
@@ -62,4 +64,5 @@ export const UNDOABLE: ReadonlySet<Action["type"]> = new Set([
   "state/replace",
   "program/delete",
   "program/removeExercise",
+  "session/keepReplacement",
 ]);

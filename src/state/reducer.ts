@@ -1,6 +1,7 @@
 import { ACCENTS, SESSION_MINUTES, makeEmptyProgram, patchExercise } from "../domain/library.ts";
 import { completeOnboarding } from "../domain/onboarding.ts";
 import { clampLoad, applySessionToPrograms, openingReps, weightStep } from "../domain/progression.ts";
+import { cleanReplacementName, keptSessionEntry, keptTemplate } from "../domain/replacement.ts";
 import { NOTE_MAX_LENGTH, createSession, beatsRecord, finishSession } from "../domain/session.ts";
 import { createInitialState } from "../domain/seed.ts";
 import { lastSessionDate } from "../domain/stats.ts";
@@ -41,6 +42,54 @@ function withSetsUpdated(
 ): SessionExercise {
   const sets = entry.sets.map((set, index) => (index === setIndex ? update(set) : set));
   return { ...entry, sets };
+}
+
+/** Remplacement le temps d'une séance : le programme n'en saura rien. */
+function replaceForSession(state: AppState, exerciseId: string, alternative: string): AppState {
+  const name = cleanReplacementName(alternative);
+  if (!state.session || name === null) return state;
+  return {
+    ...state,
+    session: mapExercise(state.session, exerciseId, (entry) => ({
+      ...entry,
+      // Revenir au mouvement prévu n'est pas un remplacement.
+      replacedBy: name === entry.name ? null : name,
+      status: entry.status === "skipped" ? "pending" : entry.status,
+    })),
+  };
+}
+
+/**
+ * Remplacement gardé : l'exercice du programme est échangé à sa place, et la
+ * séance en cours bascule dessus. Si le programme ou l'exercice a disparu
+ * entre-temps, il ne reste qu'un remplacement pour la séance.
+ */
+function keepReplacement(state: AppState, exerciseId: string, alternative: string): AppState {
+  const name = cleanReplacementName(alternative);
+  const session = state.session;
+  if (!session || name === null) return state;
+  const entry = session.exercises.find((item) => item.exerciseId === exerciseId);
+  const program = state.programs.find((item) => item.id === session.programId);
+  const original = program?.exercises.find((item) => item.id === exerciseId);
+  if (!entry || !program || !original || name === entry.name) {
+    return replaceForSession(state, exerciseId, alternative);
+  }
+
+  const kept = keptTemplate(program, original, entry, name);
+  return {
+    ...state,
+    programs: state.programs.map((item) =>
+      item.id === program.id
+        ? {
+            ...item,
+            exercises: item.exercises.map((exercise) =>
+              exercise.id === exerciseId ? kept : exercise,
+            ),
+          }
+        : item,
+    ),
+    session: mapExercise(session, exerciseId, (current) => keptSessionEntry(current, kept)),
+  };
 }
 
 export function reducer(state: AppState, action: Action): AppState {
@@ -296,9 +345,11 @@ export function reducer(state: AppState, action: Action): AppState {
           return {
             ...set,
             done,
+            // Un remplaçant d'un jour ne se mesure pas aux records d'une autre machine.
             pr:
               done &&
               entry.unit === "kg" &&
+              entry.replacedBy === null &&
               beatsRecord(state.records, entry.exerciseId, set),
           };
         });
@@ -362,17 +413,11 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, session: { ...session, currentIndex: Math.max(0, index) } };
     }
 
-    case "session/replace": {
-      if (!state.session) return state;
-      return {
-        ...state,
-        session: mapExercise(state.session, action.exerciseId, (entry) => ({
-          ...entry,
-          replacedBy: action.alternative,
-          status: entry.status === "skipped" ? "pending" : entry.status,
-        })),
-      };
-    }
+    case "session/replace":
+      return replaceForSession(state, action.exerciseId, action.alternative);
+
+    case "session/keepReplacement":
+      return keepReplacement(state, action.exerciseId, action.alternative);
 
     case "session/addSet": {
       if (!state.session) return state;

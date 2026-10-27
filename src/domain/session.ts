@@ -158,7 +158,8 @@ export function finishSession(
   const personalRecords: string[] = [];
 
   for (const entry of session.exercises) {
-    if (entry.unit !== "kg") continue;
+    // A one-off substitute counts in the volume, never in the record book.
+    if (entry.unit !== "kg" || entry.replacedBy !== null) continue;
     const best = bestSet(entry);
     if (!best) continue;
     const previous = nextRecords[entry.exerciseId];

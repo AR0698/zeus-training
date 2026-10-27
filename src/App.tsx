@@ -360,11 +360,31 @@ export function App() {
         <ExerciseSheet detail={detail} onClose={() => setDetail(null)} />
         <ReplaceSheet
           entry={replaceTarget}
+          canKeep={
+            replaceTarget !== null &&
+            state.programs.some(
+              (program) =>
+                program.id === state.session?.programId &&
+                program.exercises.some((exercise) => exercise.id === replaceTarget.exerciseId),
+            )
+          }
           onClose={() => setReplaceTarget(null)}
-          onChoose={(alternative) => {
+          onChoose={(alternative, keep) => {
             if (!replaceTarget) return;
-            dispatch({ type: "session/replace", exerciseId: replaceTarget.exerciseId, alternative });
-            show({ message: `${alternative} remplace ${replaceTarget.shortName}` });
+            const { exerciseId, name, shortName } = replaceTarget;
+            if (keep) {
+              dispatch({ type: "session/keepReplacement", exerciseId, alternative });
+              show({
+                message: `${alternative} remplace ${shortName} dans le programme`,
+                action: { label: "Annuler", run: undo },
+              });
+            } else {
+              dispatch({ type: "session/replace", exerciseId, alternative });
+              show({
+                message:
+                  alternative === name ? `Retour à ${shortName}` : `${alternative} remplace ${shortName}`,
+              });
+            }
             setReplaceTarget(null);
           }}
         />
