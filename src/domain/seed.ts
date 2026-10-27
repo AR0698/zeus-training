@@ -121,6 +121,7 @@ export const DEFAULT_SETTINGS: Settings = {
   autoRest: true,
   defaultRestSeconds: 90,
   vibration: true,
+  sounds: false,
   keepAwake: true,
   displayName: "",
 };

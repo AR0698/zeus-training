@@ -25,6 +25,7 @@ export function SettingsScreen({
   state,
   now,
   onUpdate,
+  onPreviewSound,
   onExport,
   onImport,
   onReset,
@@ -33,6 +34,8 @@ export function SettingsScreen({
   state: AppState;
   now: number;
   onUpdate: (patch: Partial<Settings>) => void;
+  /** Plays the end-of-rest beep, so turning sounds on is heard straight away. */
+  onPreviewSound: () => void;
   onExport: () => void;
   onImport: (next: AppState, issues: string[]) => void;
   onReset: () => void;
@@ -141,6 +144,16 @@ export function SettingsScreen({
           help="Confirmation courte à chaque série validée et à la fin du repos."
           checked={state.settings.vibration}
           onChange={(vibration) => onUpdate({ vibration })}
+        />
+
+        <ToggleRow
+          label="Sons"
+          help="Bip à 3, 2, 1 puis à la fin du repos. Sur iPhone, coupés par le mode silencieux."
+          checked={state.settings.sounds}
+          onChange={(sounds) => {
+            onUpdate({ sounds });
+            if (sounds) onPreviewSound();
+          }}
         />
 
         <ToggleRow
