@@ -1,4 +1,4 @@
-import { ACCENTS, makeEmptyProgram, patchExercise } from "../domain/library.ts";
+import { ACCENTS, SESSION_MINUTES, makeEmptyProgram, patchExercise } from "../domain/library.ts";
 import { completeOnboarding } from "../domain/onboarding.ts";
 import { clampLoad, applySessionToPrograms, weightStep } from "../domain/progression.ts";
 import { createSession, beatsRecord, finishSession } from "../domain/session.ts";
@@ -142,8 +142,11 @@ export function reducer(state: AppState, action: Action): AppState {
             ...patch,
             name: (patch.name ?? program.name).trim() || "Séance sans titre",
             estimatedMinutes: Math.max(
-              5,
-              Math.min(240, Math.round(patch.estimatedMinutes ?? program.estimatedMinutes)),
+              SESSION_MINUTES.min,
+              Math.min(
+                SESSION_MINUTES.max,
+                Math.round(patch.estimatedMinutes ?? program.estimatedMinutes),
+              ),
             ),
           };
         }),

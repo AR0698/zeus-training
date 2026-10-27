@@ -57,6 +57,15 @@ export function formatDuration(totalSeconds: number): string {
   return seconds === 0 ? `${minutes} min` : `${minutes} min ${seconds}`;
 }
 
+/** A session length: "45 min", "1 h", "1 h 30", "2 h 05" — hours read faster than 120 min. */
+export function formatMinutes(totalMinutes: number): string {
+  const safe = Math.max(0, Math.round(totalMinutes));
+  if (safe < 60) return `${safe} min`;
+  const hours = Math.floor(safe / 60);
+  const minutes = safe % 60;
+  return minutes === 0 ? `${hours} h` : `${hours} h ${String(minutes).padStart(2, "0")}`;
+}
+
 /** French decimals use a comma, and 2.0 should read as "2" not "2,0". */
 export function formatNumber(value: number): string {
   return Number.isInteger(value) ? String(value) : String(value).replace(".", ",");

@@ -542,7 +542,11 @@
 
 .stepper-value {
   display: flex;
+  /* baseline garde l'unité alignée sur le chiffre ; wrap + align-content
+     recentre la ligne, qui sinon colle en haut du bouton. */
+  flex-wrap: wrap;
   align-items: baseline;
+  align-content: center;
   justify-content: center;
   gap: 2px;
   padding: 0 var(--space-1);

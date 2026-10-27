@@ -22,6 +22,7 @@ export function Stepper({
   onSet,
   label,
   tone = "default",
+  formatValue = formatNumber,
 }: {
   value: number;
   unit: string;
@@ -31,6 +32,8 @@ export function Stepper({
   onSet: (value: number) => void;
   label: string;
   tone?: "default" | "quiet";
+  /** How the value reads at rest; typing always uses the raw number. */
+  formatValue?: (value: number) => string;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -120,13 +123,13 @@ export function Stepper({
         <button
           type="button"
           className="stepper-value"
-          aria-label={`${label} : ${formatNumber(value)} ${unit}. Modifier la valeur`}
+          aria-label={`${label} : ${[formatValue(value), unit].filter(Boolean).join(" ")}. Modifier la valeur`}
           onClick={() => {
             setDraft(formatNumber(value));
             setEditing(true);
           }}
         >
-          <span className="tabular">{formatNumber(value)}</span>
+          <span className="tabular">{formatValue(value)}</span>
           {unit && <small>{unit}</small>}
         </button>
       )}
