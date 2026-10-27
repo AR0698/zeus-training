@@ -277,6 +277,7 @@ function ExerciseCard({
   handlers: SessionHandlers;
 }) {
   const allSetsDone = entry.sets.every((set) => set.done);
+  const timed = entry.unit === "sec";
   const restSeconds = entry.restSeconds > 0 ? entry.restSeconds : settings.defaultRestSeconds;
 
   return (
@@ -306,11 +307,13 @@ function ExerciseCard({
         </button>
       </header>
 
-      <div className="set-table" role="group" aria-label="Séries">
+      {/* Un exercice chronométré ne se compte qu'en secondes : pas de colonne
+          reps, sinon la cible en secondes s'y retrouvait en « Tours 45 ». */}
+      <div className={`set-table ${timed ? "is-timed" : ""}`} role="group" aria-label="Séries">
         <div className="set-head">
           <span>Série</span>
-          <span>{entry.unit === "sec" ? "Durée" : "Charge"}</span>
-          <span>{entry.unit === "sec" ? "Tours" : "Reps"}</span>
+          <span>{timed ? "Durée" : "Charge"}</span>
+          {!timed && <span>Reps</span>}
           <span className="visually-hidden">Validation</span>
         </div>
 
@@ -330,28 +333,30 @@ function ExerciseCard({
             </span>
 
             <div className="set-cell set-cell-weight">
-              <span className="set-cell-label">{entry.unit === "sec" ? "Durée" : "Charge"}</span>
+              <span className="set-cell-label">{timed ? "Durée" : "Charge"}</span>
               <Stepper
                 value={set.weight}
                 unit={unitLabel(entry.unit)}
                 step={weightStep(entry.unit, entry.group, set.weight)}
-                label={`Série ${setIndex + 1} ${entry.unit === "sec" ? "durée" : "charge"}`}
+                label={`Série ${setIndex + 1} ${timed ? "durée" : "charge"}`}
                 onAdjust={(delta) => handlers.adjust(entry.exerciseId, setIndex, "weight", delta)}
                 onSet={(value) => handlers.setValue(entry.exerciseId, setIndex, "weight", value)}
               />
             </div>
 
-            <div className="set-cell set-cell-reps">
-              <span className="set-cell-label">{entry.unit === "sec" ? "Tours" : "Reps"}</span>
-              <Stepper
-                value={set.reps}
-                unit=""
-                step={1}
-                label={`Série ${setIndex + 1} répétitions`}
-                onAdjust={(delta) => handlers.adjust(entry.exerciseId, setIndex, "reps", delta)}
-                onSet={(value) => handlers.setValue(entry.exerciseId, setIndex, "reps", value)}
-              />
-            </div>
+            {!timed && (
+              <div className="set-cell set-cell-reps">
+                <span className="set-cell-label">Reps</span>
+                <Stepper
+                  value={set.reps}
+                  unit=""
+                  step={1}
+                  label={`Série ${setIndex + 1} répétitions`}
+                  onAdjust={(delta) => handlers.adjust(entry.exerciseId, setIndex, "reps", delta)}
+                  onSet={(value) => handlers.setValue(entry.exerciseId, setIndex, "reps", value)}
+                />
+              </div>
+            )}
 
             <button
               type="button"
@@ -368,7 +373,7 @@ function ExerciseCard({
         <div className="set-tools">
           <span className="set-range">
             Cible {formatRepRange(entry.repMin, entry.repMax)}{" "}
-            {entry.unit === "sec" ? "s" : "reps"}
+            {timed ? "s" : "reps"}
           </span>
           <div>
             <button type="button" className="mini-button" onClick={() => handlers.removeSet(entry.exerciseId)}>

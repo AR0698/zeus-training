@@ -1,4 +1,4 @@
-import { layoffAdjustment, openingWeights } from "./progression.ts";
+import { layoffAdjustment, openingReps, openingWeights } from "./progression.ts";
 import type {
   HistoryEntry,
   PersonalRecord,
@@ -43,7 +43,7 @@ export function createSession({ program, now, id, lastSessionDate }: SessionSeed
     replacedBy: null,
     sets: openingWeights(exercise, factor).map((weight) => ({
       weight,
-      reps: exercise.repMin,
+      reps: openingReps(exercise.unit, exercise.repMin),
       done: false,
       pr: false,
     })),

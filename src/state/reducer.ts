@@ -1,6 +1,6 @@
 import { ACCENTS, makeEmptyProgram, patchExercise } from "../domain/library.ts";
 import { completeOnboarding } from "../domain/onboarding.ts";
-import { clampLoad, applySessionToPrograms, weightStep } from "../domain/progression.ts";
+import { clampLoad, applySessionToPrograms, openingReps, weightStep } from "../domain/progression.ts";
 import { createSession, beatsRecord, finishSession } from "../domain/session.ts";
 import { createInitialState } from "../domain/seed.ts";
 import { lastSessionDate } from "../domain/stats.ts";
@@ -358,7 +358,7 @@ export function reducer(state: AppState, action: Action): AppState {
           return {
             ...entry,
             status: "pending",
-            sets: [...entry.sets, { weight, reps: entry.repMin, done: false, pr: false }],
+            sets: [...entry.sets, { weight, reps: openingReps(entry.unit, entry.repMin), done: false, pr: false }],
           };
         }),
       };

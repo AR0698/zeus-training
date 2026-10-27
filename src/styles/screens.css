@@ -754,6 +754,10 @@
 .set-cell-weight { grid-area: weight; }
 .set-cell-reps { grid-area: reps; }
 .set-row .validate-button { grid-area: validate; height: 100%; }
+/* Chronométré : la durée seule, donc une seule ligne par série. */
+.set-table.is-timed .set-row { grid-template-areas: "index weight validate"; }
+.set-table.is-timed .set-index { align-self: center; padding-top: 0; }
+.set-table.is-timed .validate-button { height: 3rem; }
 
 /* Le libellé et le pas-à-pas tiennent sur une ligne tant que le second garde
    ses 132 px — deux cibles de 44 px plus la valeur. En dessous (un 320 px, ou
@@ -932,6 +936,8 @@
     grid-template-areas: "index weight reps validate";
     gap: var(--space-3);
   }
+  .set-table.is-timed .set-row { grid-template-areas: "index weight weight validate"; }
+  .set-table.is-timed .set-head span:nth-child(2) { grid-column: span 2; }
   .set-index { align-self: center; padding-top: 0; }
   /* Le libellé disparaît : l'en-tête de colonne le remplace, et le pas-à-pas
      occupe seul la ligne. */
