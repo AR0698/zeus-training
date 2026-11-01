@@ -6,6 +6,7 @@ import {
   uniqueExerciseId,
 } from "./domain/library.ts";
 import { markOnboarded, type StarterChoice } from "./domain/onboarding.ts";
+import type { PackId } from "./domain/packs.ts";
 import { decideProgression } from "./domain/progression.ts";
 import { shouldPromptBackup } from "./domain/reminder.ts";
 import { isSessionStale } from "./domain/session.ts";
@@ -324,6 +325,11 @@ export function App() {
     setTab("programs");
   }
 
+  function addPack(packId: PackId) {
+    dispatch({ type: "program/addPack", packId });
+    show({ message: "Séances ajoutées à ta liste", tone: "success" });
+  }
+
   const staleSession =
     state.session !== null && !staleDismissed && isSessionStale(state.session, now);
   // Deux feuilles modales ouvertes en même temps s'empilent : la séance oubliée
@@ -476,6 +482,7 @@ export function App() {
             onStart={startSession}
             onEdit={setEditProgramId}
             onCreate={createProgram}
+            onAddPack={addPack}
             onOpenDetail={setDetail}
           />
         )}
