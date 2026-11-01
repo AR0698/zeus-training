@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { circuitPosition, type CircuitPosition } from "../../domain/circuit.ts";
 import {
   formatClock,
   formatDuration,
@@ -8,7 +9,7 @@ import {
 } from "../../domain/format.ts";
 import { weightStep } from "../../domain/progression.ts";
 import { elapsedSeconds, lastExerciseNote, sessionProgress } from "../../domain/session.ts";
-import type { Effort, HistoryEntry, Session, SessionExercise, Settings } from "../../domain/types.ts";
+import type { Effort, HistoryEntry, Session, SessionExercise, SetEntry, Settings } from "../../domain/types.ts";
 import { useBottomChrome } from "../../hooks/useBottomChrome.ts";
 import { ExerciseNoteField, ExerciseNoteRecall } from "../components/ExerciseNoteField.tsx";
 import { RestTimerBar } from "../components/RestTimer.tsx";
@@ -158,6 +159,7 @@ export function SessionScreen({
           entry={current}
           index={session.currentIndex}
           total={session.exercises.length}
+          circuit={circuitPosition(session, session.currentIndex)}
           previousNote={lastExerciseNote(history, current.exerciseId)}
           now={now}
           settings={settings}
@@ -282,6 +284,7 @@ function ExerciseCard({
   entry,
   index,
   total,
+  circuit,
   previousNote,
   now,
   settings,
@@ -291,6 +294,8 @@ function ExerciseCard({
   entry: SessionExercise;
   index: number;
   total: number;
+  /** Position dans les tours, ou `null` pour un exercice en séries classiques. */
+  circuit: CircuitPosition | null;
   previousNote: { note: string; date: number } | null;
   now: number;
   settings: Settings;
@@ -301,13 +306,23 @@ function ExerciseCard({
   // Poids du corps : pas de colonne de charge, seules les répétitions comptent.
   const bodyweight = entry.unit === "reps";
   const restSeconds = entry.restSeconds > 0 ? entry.restSeconds : settings.defaultRestSeconds;
+  // En circuit, une seule série à la fois : la première qui reste à faire.
+  const nextSetIndex = entry.sets.findIndex((set) => !set.done);
+  const flashcard = circuit !== null && nextSetIndex !== -1;
+  const tableClass = `set-table ${timed ? "is-timed" : ""} ${bodyweight ? "is-bodyweight" : ""}`;
 
   return (
-    <article ref={ref} className="exercise-card" aria-labelledby={`exercise-${entry.exerciseId}`}>
+    <article
+      ref={ref}
+      className={`exercise-card ${flashcard ? "is-circuit" : ""}`}
+      aria-labelledby={`exercise-${entry.exerciseId}`}
+    >
       <header className="exercise-card-head">
         <div>
           <span className="kicker">
-            Exercice {index + 1}/{total}
+            {circuit
+              ? `Tour ${circuit.round}/${circuit.rounds} · exercice ${circuit.step}/${circuit.steps}`
+              : `Exercice ${index + 1}/${total}`}
           </span>
           <h2 id={`exercise-${entry.exerciseId}`}>{entry.replacedBy ?? entry.name}</h2>
           {entry.replacedBy && <span className="swap-note">remplace {entry.name}</span>}
@@ -330,86 +345,63 @@ function ExerciseCard({
         </button>
       </header>
 
-      {/* Un exercice chronométré ne se compte qu'en secondes : pas de colonne
-          reps, sinon la cible en secondes s'y retrouvait en « Tours 45 ». */}
-      <div className={`set-table ${timed ? "is-timed" : ""} ${bodyweight ? "is-bodyweight" : ""}`} role="group" aria-label="Séries">
-        <div className="set-head">
-          <span>Série</span>
-          {!bodyweight && <span>{timed ? "Durée" : "Charge"}</span>}
-          {!timed && <span>Reps</span>}
-          <span className="visually-hidden">Validation</span>
-        </div>
+      {flashcard ? (
+        <CircuitSet
+          entry={entry}
+          setIndex={nextSetIndex}
+          className={tableClass}
+          timed={timed}
+          bodyweight={bodyweight}
+          handlers={handlers}
+        />
+      ) : (
+        // Un exercice chronométré ne se compte qu'en secondes : pas de colonne
+        // reps, sinon la cible en secondes s'y retrouvait en « Tours 45 ».
+        <div className={tableClass} role="group" aria-label="Séries">
+          <div className="set-head">
+            <span>Série</span>
+            {!bodyweight && <span>{timed ? "Durée" : "Charge"}</span>}
+            {!timed && <span>Reps</span>}
+            <span className="visually-hidden">Validation</span>
+          </div>
 
-        {entry.sets.map((set, setIndex) => (
-          <div className={`set-row ${set.done ? "is-done" : ""}`} key={setIndex}>
-            <span className="set-index tabular">
-              {setIndex + 1}
-              {set.pr && (
-                // Toutes les icônes sont `aria-hidden`, et un `title` ne se
-                // montre pas au doigt : sans ce mot, le record n'existe que
-                // pour qui voit la coupe.
-                <span className="pr-flag">
-                  <IconTrophy size={11} />
-                  <span className="visually-hidden">Record personnel</span>
-                </span>
-              )}
-            </span>
-
-            {!bodyweight && (
-              <div className="set-cell set-cell-weight">
-                <span className="set-cell-label">{timed ? "Durée" : "Charge"}</span>
-                <Stepper
-                  value={set.weight}
-                  unit={unitLabel(entry.unit)}
-                  step={weightStep(entry.unit, entry.group, set.weight)}
-                  label={`Série ${setIndex + 1} ${timed ? "durée" : "charge"}`}
-                  onAdjust={(delta) => handlers.adjust(entry.exerciseId, setIndex, "weight", delta)}
-                  onSet={(value) => handlers.setValue(entry.exerciseId, setIndex, "weight", value)}
-                />
-              </div>
-            )}
-
-            {!timed && (
-              <div className="set-cell set-cell-reps">
-                <span className="set-cell-label">Reps</span>
-                <Stepper
-                  value={set.reps}
-                  unit=""
-                  step={1}
-                  label={`Série ${setIndex + 1} répétitions`}
-                  onAdjust={(delta) => handlers.adjust(entry.exerciseId, setIndex, "reps", delta)}
-                  onSet={(value) => handlers.setValue(entry.exerciseId, setIndex, "reps", value)}
-                />
-              </div>
-            )}
-
-            <button
-              type="button"
-              className="validate-button"
-              aria-pressed={set.done}
-              aria-label={`${set.done ? "Annuler la" : "Valider la"} série ${setIndex + 1}`}
-              onClick={() => handlers.toggleSet(entry, setIndex)}
+          {entry.sets.map((set, setIndex) => (
+            <SetRow
+              key={setIndex}
+              entry={entry}
+              set={set}
+              setIndex={setIndex}
+              timed={timed}
+              bodyweight={bodyweight}
+              handlers={handlers}
             >
-              <IconCheck size={22} />
-            </button>
-          </div>
-        ))}
+              <button
+                type="button"
+                className="validate-button"
+                aria-pressed={set.done}
+                aria-label={`${set.done ? "Annuler la" : "Valider la"} série ${setIndex + 1}`}
+                onClick={() => handlers.toggleSet(entry, setIndex)}
+              >
+                <IconCheck size={22} />
+              </button>
+            </SetRow>
+          ))}
 
-        <div className="set-tools">
-          <span className="set-range">
-            Cible {formatRepRange(entry.repMin, entry.repMax)}{" "}
-            {timed ? "s" : "reps"}
-          </span>
-          <div>
-            <button type="button" className="mini-button" onClick={() => handlers.removeSet(entry.exerciseId)}>
-              − série
-            </button>
-            <button type="button" className="mini-button" onClick={() => handlers.addSet(entry.exerciseId)}>
-              + série
-            </button>
+          <div className="set-tools">
+            <span className="set-range">
+              Cible {formatRepRange(entry.repMin, entry.repMax)} {timed ? "s" : "reps"}
+            </span>
+            <div>
+              <button type="button" className="mini-button" onClick={() => handlers.removeSet(entry.exerciseId)}>
+                − série
+              </button>
+              <button type="button" className="mini-button" onClick={() => handlers.addSet(entry.exerciseId)}>
+                + série
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* La zone vit dès le montage de la carte : un `role="status"` inséré en
           même temps que son texte n'est pas annoncé de façon fiable. */}
@@ -468,5 +460,122 @@ function ExerciseCard({
         )}
       </div>
     </article>
+  );
+}
+
+/**
+ * Une ligne de série : son numéro, la charge (ou la durée) et les reps.
+ * La validation est passée en `children` : une coche dans le tableau, rien
+ * dans la carte du circuit qui a son propre gros bouton.
+ */
+function SetRow({
+  entry,
+  set,
+  setIndex,
+  timed,
+  bodyweight,
+  handlers,
+  children,
+}: {
+  entry: SessionExercise;
+  set: SetEntry;
+  setIndex: number;
+  timed: boolean;
+  bodyweight: boolean;
+  handlers: SessionHandlers;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className={`set-row ${set.done ? "is-done" : ""}`}>
+      <span className="set-index tabular">
+        {setIndex + 1}
+        {set.pr && (
+          // Toutes les icônes sont `aria-hidden`, et un `title` ne se
+          // montre pas au doigt : sans ce mot, le record n'existe que
+          // pour qui voit la coupe.
+          <span className="pr-flag">
+            <IconTrophy size={11} />
+            <span className="visually-hidden">Record personnel</span>
+          </span>
+        )}
+      </span>
+
+      {!bodyweight && (
+        <div className="set-cell set-cell-weight">
+          <span className="set-cell-label">{timed ? "Durée" : "Charge"}</span>
+          <Stepper
+            value={set.weight}
+            unit={unitLabel(entry.unit)}
+            step={weightStep(entry.unit, entry.group, set.weight)}
+            label={`Série ${setIndex + 1} ${timed ? "durée" : "charge"}`}
+            onAdjust={(delta) => handlers.adjust(entry.exerciseId, setIndex, "weight", delta)}
+            onSet={(value) => handlers.setValue(entry.exerciseId, setIndex, "weight", value)}
+          />
+        </div>
+      )}
+
+      {!timed && (
+        <div className="set-cell set-cell-reps">
+          <span className="set-cell-label">Reps</span>
+          <Stepper
+            value={set.reps}
+            unit=""
+            step={1}
+            label={`Série ${setIndex + 1} répétitions`}
+            onAdjust={(delta) => handlers.adjust(entry.exerciseId, setIndex, "reps", delta)}
+            onSet={(value) => handlers.setValue(entry.exerciseId, setIndex, "reps", value)}
+          />
+        </div>
+      )}
+
+      {children}
+    </div>
+  );
+}
+
+/**
+ * La carte du circuit : une seule série, celle du tour en cours, et un gros
+ * « Fait » qui enchaîne sur l'exercice suivant. Pas de « + série » : le nombre
+ * de tours appartient au programme.
+ */
+function CircuitSet({
+  entry,
+  setIndex,
+  className,
+  timed,
+  bodyweight,
+  handlers,
+}: {
+  entry: SessionExercise;
+  setIndex: number;
+  className: string;
+  timed: boolean;
+  bodyweight: boolean;
+  handlers: SessionHandlers;
+}) {
+  const set = entry.sets[setIndex];
+  if (!set) return null;
+  return (
+    <div className={`${className} circuit-set`} role="group" aria-label="Série du tour">
+      <SetRow
+        entry={entry}
+        set={set}
+        setIndex={setIndex}
+        timed={timed}
+        bodyweight={bodyweight}
+        handlers={handlers}
+      />
+      <span className="set-range">
+        Cible {formatRepRange(entry.repMin, entry.repMax)} {timed ? "s" : "reps"}
+      </span>
+      <button
+        type="button"
+        className="button button-accent button-lg circuit-done"
+        onClick={() => handlers.toggleSet(entry, setIndex)}
+      >
+        <IconCheck size={22} />
+        Fait
+      </button>
+    </div>
   );
 }

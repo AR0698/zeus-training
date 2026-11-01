@@ -44,6 +44,14 @@ export type ExerciseTemplate = {
   restSeconds: number;
 };
 
+/**
+ * Les `size` premiers exercices d'une séance faits en tours : une série de
+ * chacun à la suite, sans repos, puis `restSeconds` de repos avant le tour
+ * suivant. Le nombre de tours est le nombre de séries de chaque exercice ; les
+ * exercices d'après restent en séries classiques (gainage, chaise murale).
+ */
+export type Circuit = { size: number; restSeconds: number };
+
 export type Program = {
   id: string;
   name: string;
@@ -53,6 +61,8 @@ export type Program = {
   warmup: string;
   estimatedMinutes: number;
   exercises: ExerciseTemplate[];
+  /** Absent : la séance se fait exercice par exercice. */
+  circuit?: Circuit;
 };
 
 export type SetEntry = {
@@ -94,6 +104,8 @@ export type Session = {
   startedAt: number;
   currentIndex: number;
   exercises: SessionExercise[];
+  /** Copie du circuit du programme au démarrage, bornée à la séance. */
+  circuit?: Circuit;
 };
 
 /** A per-exercise note kept with the session that produced it. */

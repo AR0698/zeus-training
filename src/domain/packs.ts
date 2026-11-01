@@ -47,6 +47,14 @@ type PackExercise = {
 const REST = 75;
 
 /**
+ * Le programme d'origine se fait en tours : 3 tours des premiers exercices
+ * enchaînés, 60 à 75 s de repos entre les tours seulement (les séances 1 et 3
+ * à 60 s, les 2 et 4 à 75 s), puis la fin en séries classiques.
+ */
+const CIRCUIT_REST_SHORT = 60;
+const CIRCUIT_REST_LONG = 75;
+
+/**
  * Un exercice du catalogue réglé pour le paquet.
  *
  * Un mouvement chronométré (`sec`) garde ses secondes comme charge : sa cible
@@ -110,6 +118,7 @@ const TRANSITION: Pack = {
       accent: "acid",
       warmup: "4 min : cercles de poignets, rotations d'épaules, 10 scapula push-ups, quelques pompes au mur",
       estimatedMinutes: 30,
+      circuit: { size: 5, restSeconds: CIRCUIT_REST_SHORT },
       exercises: exercises([
         {
           id: "incline-push-up",
@@ -143,6 +152,7 @@ const TRANSITION: Pack = {
       accent: "orange",
       warmup: "4 min : squats lents, rotations de hanches, fentes dynamiques",
       estimatedMinutes: 30,
+      circuit: { size: 5, restSeconds: CIRCUIT_REST_LONG },
       exercises: exercises([
         { id: "bodyweight-squat", repMin: 12, repMax: 15, tip: "Descente en 3 secondes, 1 seconde de pause en bas." },
         { id: "bodyweight-bulgarian-split-squat", repMin: 6, repMax: 10 },
@@ -165,6 +175,7 @@ const TRANSITION: Pack = {
       accent: "sky",
       warmup: "4 min : dead bug, cat-cow, rotations du buste",
       estimatedMinutes: 30,
+      circuit: { size: 5, restSeconds: CIRCUIT_REST_SHORT },
       exercises: exercises([
         {
           id: "inverted-row",
@@ -187,6 +198,7 @@ const TRANSITION: Pack = {
       accent: "violet",
       warmup: "4 min : marche rapide, montées de genoux, squats, pompes au mur",
       estimatedMinutes: 30,
+      circuit: { size: 5, restSeconds: CIRCUIT_REST_LONG },
       exercises: exercises([
         { id: "incline-push-up", repMin: 8, repMax: 12, cue: INCLINED_CUE },
         {
@@ -230,6 +242,7 @@ const MAIN: Pack = {
       accent: "acid",
       warmup: "4 min : cercles de poignets, 10 scapula push-ups, rotations d'épaules, 5 pompes faciles",
       estimatedMinutes: 30,
+      circuit: { size: 5, restSeconds: CIRCUIT_REST_SHORT },
       exercises: exercises([
         { id: "band-assisted-pull-up", repMin: 5, repMax: 8 },
         { id: "push-up", repMin: 8, repMax: 15, tip: "Descente en 3 secondes. Au-delà de 15 propres, passe aux pompes déclinées." },
@@ -246,6 +259,7 @@ const MAIN: Pack = {
       accent: "orange",
       warmup: "4 min : squats lents, rotations de hanches, fentes dynamiques",
       estimatedMinutes: 30,
+      circuit: { size: 5, restSeconds: CIRCUIT_REST_LONG },
       exercises: exercises([
         { id: "bodyweight-bulgarian-split-squat", repMin: 8, repMax: 12 },
         { id: "slider-leg-curl", repMin: 8, repMax: 12 },
@@ -268,6 +282,7 @@ const MAIN: Pack = {
       accent: "sky",
       warmup: "4 min : dead bug, cat-cow, rotations du buste, scapula pulls",
       estimatedMinutes: 30,
+      circuit: { size: 5, restSeconds: CIRCUIT_REST_SHORT },
       exercises: exercises([
         { id: "band-assisted-pull-up", repMin: 5, repMax: 8 },
         { id: "inverted-row", repMin: 10, repMax: 15 },
@@ -284,6 +299,7 @@ const MAIN: Pack = {
       accent: "violet",
       warmup: "4 min : marche rapide, montées de genoux, squats, 5 pompes faciles",
       estimatedMinutes: 30,
+      circuit: { size: 6, restSeconds: CIRCUIT_REST_LONG },
       exercises: exercises([
         {
           id: "chin-up",

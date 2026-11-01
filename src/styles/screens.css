@@ -349,6 +349,7 @@
 .program-order { font-size: var(--text-xs); color: var(--text-3); padding-top: 4px; }
 .program-card h2 { font-size: var(--text-xl); }
 .program-card-head p { font-size: var(--text-sm); }
+.program-circuit { margin-top: var(--space-1); font-size: var(--text-xs); font-weight: 700; color: var(--accent-text); }
 
 .program-exercises {
   list-style: none;
@@ -791,6 +792,16 @@
 .set-table.is-bodyweight .set-index { align-self: center; padding-top: 0; }
 .set-table.is-bodyweight .validate-button { height: 3rem; }
 
+/* Circuit : une seule série, empilée, et un « Fait » pleine largeur sous le
+   pouce. Le numéro de série disparaît — le kicker dit déjà quel tour c'est —
+   et les libellés restent, faute d'en-tête de colonne. */
+.set-table.circuit-set { display: grid; gap: var(--space-3); }
+.set-table.circuit-set .set-row { display: flex; flex-direction: column; align-items: stretch; }
+.set-table.circuit-set .set-index { display: none; }
+.set-table.circuit-set .set-cell-label { display: inline; }
+.set-table.circuit-set .set-range { text-align: center; }
+.circuit-done { width: 100%; min-height: 3.5rem; font-size: var(--text-lg); }
+
 /* Le libellé et le pas-à-pas tiennent sur une ligne tant que le second garde
    ses 132 px — deux cibles de 44 px plus la valeur. En dessous (un 320 px, ou
    n'importe quel écran en zoom d'affichage), le pas-à-pas passe à la ligne et
@@ -977,6 +988,7 @@
      occupe seul la ligne. */
   .set-cell-label { display: none; }
   .set-row .validate-button { height: 3rem; }
+  .set-table.circuit-set .set-cell-label { display: inline; }
 }
 
 @media (min-width: 60rem) {
