@@ -20,6 +20,8 @@ export const DELOAD_FACTOR = 0.9;
  */
 export function weightStep(unit: Unit, group: MuscleGroup, weight: number): number {
   if (unit === "sec") return 5;
+  // Poids du corps : il n'y a pas de charge à régler, donc pas de pas.
+  if (unit === "reps") return 0;
   if (weight < 12) return 1;
   if (group === "lower") return 5;
   return 2.5;
@@ -76,6 +78,7 @@ export function decideProgression(entry: SessionExercise): ProgressionDecision {
   }
 
   const timed = entry.unit === "sec";
+  const bodyweight = entry.unit === "reps";
   const rangeUnit = timed ? "s" : "reps";
   const performance = (set: { weight: number; reps: number }) => setPerformance(entry.unit, set);
 
@@ -86,6 +89,15 @@ export function decideProgression(entry: SessionExercise): ProgressionDecision {
     return {
       action: "hold",
       reason: `Série sous ${entry.repMin} s — on repart de la durée tenue.`,
+      nextWeights: currentWeights,
+      lastWeights,
+    };
+  }
+  // Sans charge, il n'y a rien à alléger : on garde la cible et on le dit.
+  if (belowRange && bodyweight) {
+    return {
+      action: "hold",
+      reason: `Série sous ${entry.repMin} reps — même exercice, on vise la fourchette.`,
       nextWeights: currentWeights,
       lastWeights,
     };
@@ -105,6 +117,17 @@ export function decideProgression(entry: SessionExercise): ProgressionDecision {
   const atTopOfRange = completed.every((set) => performance(set) >= entry.repMax);
   const feltHard = entry.effort === "hard";
 
+  // Sans charge à ajouter, la progression est une variante plus difficile : on
+  // l'annonce plutôt que de proposer des kilos qui n'existent pas.
+  if (bodyweight && allSetsDone && atTopOfRange && !feltHard) {
+    return {
+      action: "hold",
+      reason: `Toutes les séries à ${entry.repMax} reps — passe à la variante plus difficile.`,
+      nextWeights: currentWeights,
+      lastWeights,
+    };
+  }
+
   if (allSetsDone && atTopOfRange && !feltHard) {
     return {
       action: "increase",
@@ -119,7 +142,9 @@ export function decideProgression(entry: SessionExercise): ProgressionDecision {
   const reason = feltHard
     ? timed
       ? "Ressenti difficile — on consolide avant d'allonger la durée."
-      : "Ressenti difficile — on consolide avant d'ajouter du poids."
+      : bodyweight
+        ? "Ressenti difficile — on consolide avant de durcir l'exercice."
+        : "Ressenti difficile — on consolide avant d'ajouter du poids."
     : !allSetsDone
       ? "Séries incomplètes — cible maintenue."
       : `Reste à atteindre ${entry.repMax} ${rangeUnit} sur toutes les séries.`;

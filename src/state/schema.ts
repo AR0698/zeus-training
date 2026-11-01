@@ -70,12 +70,24 @@ function numberList(value: unknown, length: number, fallback: number[]): number[
   );
 }
 
-const UNITS: readonly Unit[] = ["kg", "sec"];
+const UNITS: readonly Unit[] = ["kg", "sec", "reps"];
 const GROUPS: readonly MuscleGroup[] = ["upper", "lower", "core"];
 const EFFORTS: readonly Effort[] = ["easy", "good", "hard"];
 const STATUSES: readonly SessionExerciseStatus[] = ["pending", "done", "skipped"];
 const ACCENTS: readonly Program["accent"][] = ["acid", "orange", "sky", "violet"];
 const THEMES: readonly ThemePreference[] = ["auto", "dark", "light"];
+
+/**
+ * Les mouvements au poids du corps étaient enregistrés en kilos, à 0 kg, avant
+ * que l'unité « corps » n'existe. Une fiche du catalogue qui compte désormais
+ * des répétitions et dont toutes les charges valent 0 passe à cette unité : les
+ * kilos disparaissent sans toucher à aucune séance ni à aucun record.
+ * Une charge saisie à la main (un sac à dos, un lest) garde ses kilos.
+ */
+function migrateBodyweightUnit(id: string, unit: Unit, loads: number[]): Unit {
+  if (unit !== "kg" || loads.some((load) => load !== 0)) return unit;
+  return catalogTemplate(id)?.unit === "reps" ? "reps" : unit;
+}
 
 function parseExercise(raw: unknown, template: ExerciseTemplate | null, issues: Issues): ExerciseTemplate | null {
   if (!isObject(raw)) return template;
@@ -90,18 +102,25 @@ function parseExercise(raw: unknown, template: ExerciseTemplate | null, issues: 
   const repMin = Math.max(1, Math.round(num(raw.repMin, base?.repMin ?? 8)));
   const repMax = Math.max(repMin, Math.round(num(raw.repMax, base?.repMax ?? repMin)));
   const fallbackWeights = base?.targetWeights ?? [0];
+  const targetWeights = numberList(raw.targetWeights, sets, fallbackWeights);
+  const lastWeights = numberList(raw.lastWeights, sets, fallbackWeights);
+  const unit = migrateBodyweightUnit(
+    id,
+    oneOf(raw.unit, UNITS, base?.unit ?? "kg"),
+    [...targetWeights, ...lastWeights],
+  );
 
   return {
     id,
     name: str(raw.name, base?.name ?? id),
     shortName: str(raw.shortName, base?.shortName ?? str(raw.name, id)),
     group: oneOf(raw.group, GROUPS, base?.group ?? "upper"),
-    unit: oneOf(raw.unit, UNITS, base?.unit ?? "kg"),
+    unit,
     sets,
     repMin,
     repMax,
-    targetWeights: numberList(raw.targetWeights, sets, fallbackWeights),
-    lastWeights: numberList(raw.lastWeights, sets, fallbackWeights),
+    targetWeights,
+    lastWeights,
     cue: str(raw.cue, base?.cue ?? ""),
     tip: str(raw.tip, base?.tip ?? ""),
     videoUrl: str(raw.videoUrl, base?.videoUrl ?? ""),
@@ -179,13 +198,19 @@ function parseSessionExercise(raw: unknown): SessionExercise | null {
   const seed = catalogTemplate(exerciseId);
   const repMin = Math.max(1, Math.round(num(raw.repMin, seed?.repMin ?? 8)));
   const rawSets = Array.isArray(raw.sets) ? raw.sets : [];
+  const sets = rawSets.length > 0 ? rawSets.map((set) => parseSet(set, repMin)) : [parseSet(null, repMin)];
+  const unit = migrateBodyweightUnit(
+    exerciseId,
+    oneOf(raw.unit, UNITS, seed?.unit ?? "kg"),
+    sets.map((set) => set.weight),
+  );
 
   return {
     exerciseId,
     name: str(raw.name, seed?.name ?? exerciseId),
     shortName: str(raw.shortName, seed?.shortName ?? exerciseId),
     group: oneOf(raw.group, GROUPS, seed?.group ?? "upper"),
-    unit: oneOf(raw.unit, UNITS, seed?.unit ?? "kg"),
+    unit,
     repMin,
     repMax: Math.max(repMin, Math.round(num(raw.repMax, seed?.repMax ?? repMin))),
     cue: str(raw.cue, seed?.cue ?? ""),
@@ -195,7 +220,7 @@ function parseSessionExercise(raw: unknown): SessionExercise | null {
       ? raw.alternatives.filter((item): item is string => typeof item === "string")
       : [...(seed?.alternatives ?? [])],
     restSeconds: Math.max(0, Math.round(num(raw.restSeconds, seed?.restSeconds ?? 90))),
-    sets: rawSets.length > 0 ? rawSets.map((set) => parseSet(set, repMin)) : [parseSet(null, repMin)],
+    sets,
     effort: typeof raw.effort === "string" ? oneOf(raw.effort, EFFORTS, "good") : null,
     status: oneOf(raw.status, STATUSES, "pending"),
     replacedBy: typeof raw.replacedBy === "string" ? raw.replacedBy : null,

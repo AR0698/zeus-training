@@ -283,6 +283,7 @@ export const LEGS: CatalogEntry[] = [
     start: [0, 0, 0],
     cue: "Chevilles bloquées, descente la plus lente possible, corps aligné.",
     tip: "Rattrape-toi avec les mains : la phase excentrique est tout l'exercice.",
+    videoUrl: "https://www.youtube.com/watch?v=EC8eS5Pbns4",
     alternatives: ["Leg Curl", "Soulevé de terre roumain", "Leg curl allongé"],
     tags: ["ischios", "excentrique", "prévention", "sans matériel"],
   }),

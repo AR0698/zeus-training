@@ -53,7 +53,14 @@ test("aucune source n'est une page de résultats de recherche", () => {
   for (const { template } of AVEC_SOURCE) {
     const url = new URL(template.videoUrl);
     assert.ok(!url.pathname.includes("results"), `${template.id} : renvoie sur une recherche`);
-    assert.equal(url.search, "", `${template.id} : la source porte une requête — ${url.search}`);
+    // Une vidéo YouTube s'identifie par `?v=<id>` : c'est la seule requête admise,
+    // et uniquement sur /watch. Tout le reste est une recherche déguisée.
+    const watch = url.hostname.endsWith("youtube.com") && url.pathname === "/watch";
+    const attendue = watch ? `?v=${url.searchParams.get("v")}` : "";
+    assert.equal(url.search, attendue, `${template.id} : la source porte une requête — ${url.search}`);
+    if (watch) {
+      assert.match(url.searchParams.get("v") ?? "", /^[\w-]{11}$/, `${template.id} : identifiant YouTube invalide`);
+    }
   }
 });
 

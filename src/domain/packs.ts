@@ -37,6 +37,10 @@ type PackExercise = {
   repMax?: number;
   rest?: number;
   tip?: string;
+  /** Remplace la consigne du catalogue quand elle suppose un accessoire. */
+  cue?: string;
+  /** Remplace la démonstration du catalogue quand elle montre un autre appareil. */
+  videoUrl?: string;
 };
 
 /** Repos par défaut des paquets : 75 s, plus court que la salle (90–120 s). */
@@ -60,6 +64,8 @@ function exercise(item: PackExercise): ExerciseTemplate | null {
     repMax,
     restSeconds: item.rest ?? (base.group === "core" ? base.restSeconds : REST),
     tip: item.tip ?? base.tip,
+    cue: item.cue ?? base.cue,
+    videoUrl: item.videoUrl ?? base.videoUrl,
   });
   if (patched.unit !== "sec") return patched;
   const held = Array.from({ length: patched.sets }, () => patched.repMin);
@@ -74,6 +80,15 @@ function exercise(item: PackExercise): ExerciseTemplate | null {
 function exercises(items: PackExercise[]): ExerciseTemplate[] {
   return items.flatMap((item) => exercise(item) ?? []);
 }
+
+/**
+ * Transition : aucune barre, aucun banc, aucun lest. Le catalogue décrit ces
+ * deux mouvements avec une barre ou un banc ; ici le support est le mur, une
+ * table ou une chaise, et la démonstration montre la table.
+ */
+const TABLE_ROW_VIDEO = "https://www.youtube.com/watch?v=5i7zfFO9RH4";
+const TABLE_ROW_CUE = "Allongé sous une table solide, mains sur le bord, corps gainé : tire la poitrine vers la table.";
+const INCLINED_CUE = "Mains sur le mur, une table ou une chaise, corps gainé des talons à la tête : plus le support est haut, plus c'est facile.";
 
 /** La vidéo de gainage de fin de séance, en deux exercices chronométrés. */
 const CORE_FINISH: PackExercise[] = [
@@ -100,12 +115,15 @@ const TRANSITION: Pack = {
           id: "incline-push-up",
           repMin: 8,
           repMax: 12,
+          cue: INCLINED_CUE,
           tip: "Mains sur le mur, une table ou une chaise : choisis la hauteur qui te donne 8 à 12 pompes propres. À 3×12, descends d'un cran.",
         },
         {
           id: "inverted-row",
           repMin: 8,
           repMax: 12,
+          cue: TABLE_ROW_CUE,
+          videoUrl: TABLE_ROW_VIDEO,
           tip: "Sous une table lourde et stable qui ne glisse pas. Plus tu écartes les pieds, plus c'est facile.",
         },
         {
@@ -148,7 +166,14 @@ const TRANSITION: Pack = {
       warmup: "4 min : dead bug, cat-cow, rotations du buste",
       estimatedMinutes: 30,
       exercises: exercises([
-        { id: "inverted-row", repMin: 8, repMax: 12, tip: "Sous une table lourde et stable. Pieds rapprochés pour durcir." },
+        {
+          id: "inverted-row",
+          repMin: 8,
+          repMax: 12,
+          cue: TABLE_ROW_CUE,
+          videoUrl: TABLE_ROW_VIDEO,
+          tip: "Sous une table lourde et stable. Pieds rapprochés pour durcir.",
+        },
         { id: "superman", repMin: 20, repMax: 30 },
         { id: "dead-bug", repMin: 8, repMax: 10, tip: "Les reps se comptent par côté. Bas du dos plaqué au sol." },
         { id: "hollow-hold", repMin: 15, repMax: 25 },
@@ -163,10 +188,27 @@ const TRANSITION: Pack = {
       warmup: "4 min : marche rapide, montées de genoux, squats, pompes au mur",
       estimatedMinutes: 30,
       exercises: exercises([
-        { id: "incline-push-up", repMin: 8, repMax: 12 },
-        { id: "inverted-row", repMin: 8, repMax: 12, tip: "Sous une table lourde et stable, ou avec la serviette sur une porte fermée à clé." },
-        { id: "bodyweight-squat", repMin: 12, repMax: 15 },
-        { id: "bodyweight-lunge", repMin: 8, repMax: 10 },
+        { id: "incline-push-up", repMin: 8, repMax: 12, cue: INCLINED_CUE },
+        {
+          id: "inverted-row",
+          repMin: 8,
+          repMax: 12,
+          cue: TABLE_ROW_CUE,
+          videoUrl: TABLE_ROW_VIDEO,
+          tip: "Sous une table lourde et stable qui ne glisse pas.",
+        },
+        {
+          id: "bodyweight-squat",
+          repMin: 12,
+          repMax: 15,
+          tip: "Descente en 3 secondes, 1 seconde de pause en bas. Pour durcir : pause plus longue, pas de charge.",
+        },
+        {
+          id: "bodyweight-lunge",
+          repMin: 8,
+          repMax: 10,
+          tip: "Les reps se comptent par jambe. Pour durcir : descente plus lente, pas de charge.",
+        },
         { id: "mountain-climber", sets: 3, repMin: 30, repMax: 30, tip: "Lents et contrôlés : le bassin ne monte pas." },
         ...CORE_FINISH,
       ]),

@@ -40,11 +40,13 @@ export function ExerciseSheet({
                 {detail.setCount} séries × {formatRepRange(detail.repMin, detail.repMax)} reps
               </span>
             </div>
-            <div className="detail-loads tabular">
-              {detail.loads.map((load, index) => (
-                <span key={index}>{formatLoad(load, detail.unit)}</span>
-              ))}
-            </div>
+            {detail.unit !== "reps" && (
+              <div className="detail-loads tabular">
+                {detail.loads.map((load, index) => (
+                  <span key={index}>{formatLoad(load, detail.unit)}</span>
+                ))}
+              </div>
+            )}
           </div>
 
           <ol className="technique-steps">

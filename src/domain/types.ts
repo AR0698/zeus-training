@@ -11,7 +11,12 @@
  *    Formatting happens at the very edge, in `format.ts`.
  */
 
-export type Unit = "kg" | "sec";
+/**
+ * Ce que mesure la « charge » d'un exercice : des kilos, des secondes tenues,
+ * ou rien du tout (`reps`) quand le corps seul fait la résistance. Un exercice
+ * `reps` n'affiche ni ne demande aucune charge : seules les répétitions comptent.
+ */
+export type Unit = "kg" | "sec" | "reps";
 export type MuscleGroup = "upper" | "lower" | "core";
 export type Effort = "easy" | "good" | "hard";
 export type SessionExerciseStatus = "pending" | "done" | "skipped";

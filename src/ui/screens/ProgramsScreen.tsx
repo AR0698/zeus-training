@@ -81,10 +81,12 @@ export function ProgramsScreen({
                         <span className="program-exercise-reps tabular">
                           {exercise.sets}×{formatRepRange(exercise.repMin, exercise.repMax)}
                         </span>
-                        <strong className="program-exercise-load tabular">
-                          {exercise.targetWeights.map(formatNumber).join(" · ")}{" "}
-                          {unitLabel(exercise.unit)}
-                        </strong>
+                        {exercise.unit !== "reps" && (
+                          <strong className="program-exercise-load tabular">
+                            {exercise.targetWeights.map(formatNumber).join(" · ")}{" "}
+                            {unitLabel(exercise.unit)}
+                          </strong>
+                        )}
                       </button>
                     </li>
                   ))}

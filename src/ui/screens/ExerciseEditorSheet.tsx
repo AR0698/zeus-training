@@ -117,14 +117,22 @@ export function ExerciseEditorSheet({
           name={`unit-${exercise.id}`}
           legend="Unité de charge"
           value={exercise.unit}
-          onChange={(unit: Unit) => onPatch({ unit })}
+          onChange={(unit: Unit) => {
+            // Passer au poids du corps efface les charges : elles resteraient
+            // cachées et réapparaîtraient en repassant aux kilos.
+            if (unit !== "reps") return onPatch({ unit });
+            const none = exercise.targetWeights.map(() => 0);
+            return onPatch({ unit, targetWeights: none, lastWeights: [...none] });
+          }}
           options={[
             { value: "kg", label: "Kilos" },
             { value: "sec", label: "Secondes" },
+            { value: "reps", label: "Corps" },
           ]}
         />
         <span className="field-help">
           « Secondes » pour le gainage : la durée remplace la charge et ne compte pas dans le volume.
+          « Corps » pour le poids du corps : aucune charge, seules les répétitions comptent.
         </span>
       </div>
 
@@ -170,41 +178,44 @@ export function ExerciseEditorSheet({
         </div>
       </div>
       <span className="field-help">
-        La charge monte quand toutes les séries atteignent {exercise.repMax} répétitions sans être
-        difficiles.
+        {exercise.unit === "reps"
+          ? `Quand toutes les séries atteignent ${exercise.repMax} répétitions sans être difficiles, passe à une variante plus difficile.`
+          : `La charge monte quand toutes les séries atteignent ${exercise.repMax} répétitions sans être difficiles.`}
       </span>
 
-      <div className="field">
-        <span className="field-label">Charges cibles</span>
-        <div className="edit-sets">
-          {exercise.targetWeights.map((weight, index) => (
-            <div className="edit-set" key={index}>
-              <span className="edit-set-index">Série {index + 1}</span>
-              <Stepper
-                tone="quiet"
-                value={weight}
-                unit={unitLabel(exercise.unit)}
-                step={step(index)}
-                label={`Charge série ${index + 1}`}
-                onAdjust={(delta) =>
-                  onPatch({
-                    targetWeights: exercise.targetWeights.map((value, i) =>
-                      i === index ? Math.max(0, value + delta) : value,
-                    ),
-                  })
-                }
-                onSet={(value) =>
-                  onPatch({
-                    targetWeights: exercise.targetWeights.map((current, i) =>
-                      i === index ? value : current,
-                    ),
-                  })
-                }
-              />
-            </div>
-          ))}
+      {exercise.unit !== "reps" && (
+        <div className="field">
+          <span className="field-label">Charges cibles</span>
+          <div className="edit-sets">
+            {exercise.targetWeights.map((weight, index) => (
+              <div className="edit-set" key={index}>
+                <span className="edit-set-index">Série {index + 1}</span>
+                <Stepper
+                  tone="quiet"
+                  value={weight}
+                  unit={unitLabel(exercise.unit)}
+                  step={step(index)}
+                  label={`Charge série ${index + 1}`}
+                  onAdjust={(delta) =>
+                    onPatch({
+                      targetWeights: exercise.targetWeights.map((value, i) =>
+                        i === index ? Math.max(0, value + delta) : value,
+                      ),
+                    })
+                  }
+                  onSet={(value) =>
+                    onPatch({
+                      targetWeights: exercise.targetWeights.map((current, i) =>
+                        i === index ? value : current,
+                      ),
+                    })
+                  }
+                />
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="field" role="group" aria-labelledby="exercise-rest-label">
         <span className="field-label" id="exercise-rest-label">Repos entre les séries</span>
