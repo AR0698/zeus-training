@@ -1,4 +1,5 @@
 import { ACCENTS, SESSION_MINUTES, makeEmptyProgram, patchExercise } from "../domain/library.ts";
+import { isInCircuit, nextCircuitIndex } from "../domain/circuit.ts";
 import { completeOnboarding } from "../domain/onboarding.ts";
 import { addPack } from "../domain/packs.ts";
 import { clampLoad, applySessionToPrograms, openingReps, weightStep } from "../domain/progression.ts";
@@ -34,6 +35,18 @@ function focusNextPending(session: Session, fromIndex: number): number {
   if (forward !== -1) return forward;
   const any = session.exercises.findIndex((entry) => entry.status === "pending");
   return any === -1 ? fromIndex : any;
+}
+
+/**
+ * Où se pose la mise au point après une série touchée. En circuit, chaque
+ * série validée passe à l'exercice suivant du tour ; une fois le circuit fini,
+ * la suite reprend exercice par exercice.
+ */
+function focusAfterToggle(session: Session, index: number, validated: boolean): number {
+  if (validated && isInCircuit(session, index)) {
+    return nextCircuitIndex(session, index) ?? focusNextPending(session, index);
+  }
+  return session.exercises[index]?.status === "done" ? focusNextPending(session, index) : index;
 }
 
 function withSetsUpdated(
@@ -365,14 +378,8 @@ export function reducer(state: AppState, action: Action): AppState {
       });
 
       const index = session.exercises.findIndex((entry) => entry.exerciseId === action.exerciseId);
-      const nowDone = session.exercises[index]?.status === "done";
-      return {
-        ...state,
-        session: {
-          ...session,
-          currentIndex: nowDone ? focusNextPending(session, index) : index,
-        },
-      };
+      const validated = session.exercises[index]?.sets[action.setIndex]?.done === true;
+      return { ...state, session: { ...session, currentIndex: focusAfterToggle(session, index, validated) } };
     }
 
     case "session/setEffort": {

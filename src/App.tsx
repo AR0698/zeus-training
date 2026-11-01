@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { restAfterValidation } from "./domain/circuit.ts";
 import { formatLoad } from "./domain/format.ts";
 import {
   makeCustomExercise,
@@ -165,16 +166,19 @@ export function App() {
         dispatch({ type: "session/setValue", exerciseId, setIndex, field, value }),
       toggleSet: (entry, setIndex) => {
         const wasDone = entry.sets[setIndex]?.done ?? false;
+        // Décidé sur la séance d'avant le geste : en circuit, pas de repos
+        // entre deux exercices d'un tour, celui du circuit en fin de tour.
+        const decision = state.session
+          ? restAfterValidation(state.session, entry.exerciseId, setIndex, state.settings)
+          : ({ kind: "none" } as const);
         dispatch({ type: "session/toggleSet", exerciseId: entry.exerciseId, setIndex, now: Date.now() });
         if (wasDone) {
           haptics.tap();
           return;
         }
         haptics.confirm();
-        const restSeconds = entry.restSeconds > 0 ? entry.restSeconds : state.settings.defaultRestSeconds;
-        const lastSet = setIndex === entry.sets.length - 1;
-        if (state.settings.autoRest && !lastSet) rest.start(restSeconds);
-        if (lastSet) rest.stop();
+        if (decision.kind === "start") rest.start(decision.seconds);
+        if (decision.kind === "stop") rest.stop();
       },
       setEffort: (exerciseId, effort: Effort) => {
         dispatch({ type: "session/setEffort", exerciseId, effort });
@@ -212,7 +216,7 @@ export function App() {
     // `finishSession` is stable enough for this list: it only reads `state`
     // through the closure below, which is recreated with it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [dispatch, haptics, rest, show, undo, state.settings.autoRest, state.settings.defaultRestSeconds, state.session],
+    [dispatch, haptics, rest, show, undo, state.settings, state.session],
   );
 
   function finishSession() {

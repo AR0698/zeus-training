@@ -1,3 +1,4 @@
+import { fitCircuit } from "./circuit.ts";
 import { layoffAdjustment, openingReps, openingWeights } from "./progression.ts";
 import type {
   ExerciseNote,
@@ -54,6 +55,7 @@ export function createSession({ program, now, id, lastSessionDate }: SessionSeed
     })),
   }));
 
+  const circuit = fitCircuit(program.circuit, exercises.length);
   return {
     session: {
       id,
@@ -63,6 +65,7 @@ export function createSession({ program, now, id, lastSessionDate }: SessionSeed
       startedAt: now,
       currentIndex: 0,
       exercises,
+      ...(circuit ? { circuit } : {}),
     },
     layoff: { applied, days },
   };

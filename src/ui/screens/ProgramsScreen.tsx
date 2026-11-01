@@ -1,3 +1,4 @@
+import { circuitSummary } from "../../domain/circuit.ts";
 import { formatMinutes, formatNumber, formatRepRange, unitLabel } from "../../domain/format.ts";
 import type { PackId } from "../../domain/packs.ts";
 import type { AppState, Program } from "../../domain/types.ts";
@@ -57,6 +58,9 @@ export function ProgramsScreen({
                     {program.focus ? `${program.focus} · ` : ""}
                     {formatMinutes(program.estimatedMinutes)}
                   </p>
+                  {circuitSummary(program) && (
+                    <p className="program-circuit tabular">{circuitSummary(program)}</p>
+                  )}
                 </div>
                 <button
                   type="button"

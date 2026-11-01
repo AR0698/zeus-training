@@ -1,3 +1,4 @@
+import { fitCircuit } from "../domain/circuit.ts";
 import { catalogTemplate } from "../domain/catalog/index.ts";
 import { NOTE_MAX_LENGTH, cleanNote } from "../domain/session.ts";
 import {
@@ -8,6 +9,7 @@ import {
 } from "../domain/seed.ts";
 import type {
   AppState,
+  Circuit,
   Effort,
   ExerciseNote,
   ExerciseTemplate,
@@ -87,6 +89,20 @@ const THEMES: readonly ThemePreference[] = ["auto", "dark", "light"];
 function migrateBodyweightUnit(id: string, unit: Unit, loads: number[]): Unit {
   if (unit !== "kg" || loads.some((load) => load !== 0)) return unit;
   return catalogTemplate(id)?.unit === "reps" ? "reps" : unit;
+}
+
+/**
+ * Absent des programmes et séances d'avant les tours : ils restent exercice par
+ * exercice. Un circuit illisible, ou trop court une fois borné aux exercices
+ * présents, est ignoré de la même façon.
+ */
+function parseCircuit(raw: unknown, exerciseCount: number): { circuit?: Circuit } {
+  if (!isObject(raw)) return {};
+  const size = num(raw.size, NaN);
+  const restSeconds = num(raw.restSeconds, NaN);
+  if (!Number.isFinite(size) || !Number.isFinite(restSeconds)) return {};
+  const circuit = fitCircuit({ size, restSeconds }, exerciseCount);
+  return circuit ? { circuit } : {};
 }
 
 function parseExercise(raw: unknown, template: ExerciseTemplate | null, issues: Issues): ExerciseTemplate | null {
@@ -171,6 +187,7 @@ function parsePrograms(raw: unknown, issues: Issues): Program[] {
       warmup: str(item.warmup, seed?.warmup ?? ""),
       estimatedMinutes: Math.max(5, Math.round(num(item.estimatedMinutes, seed?.estimatedMinutes ?? 50))),
       exercises,
+      ...parseCircuit(item.circuit, exercises.length),
     });
   }
 
@@ -254,6 +271,7 @@ function parseSession(
     startedAt: num(raw.startedAt, now),
     currentIndex: Math.min(Math.max(0, Math.round(num(raw.currentIndex, 0))), exercises.length - 1),
     exercises,
+    ...parseCircuit(raw.circuit, exercises.length),
   };
 }
 
