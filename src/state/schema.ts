@@ -1,5 +1,6 @@
 import { fitCircuit } from "../domain/circuit.ts";
 import { catalogTemplate } from "../domain/catalog/index.ts";
+import { isPackProgramId, migratePackProgramName } from "../domain/packs.ts";
 import { NOTE_MAX_LENGTH, cleanNote } from "../domain/session.ts";
 import {
   CURRENT_VERSION,
@@ -105,6 +106,17 @@ function parseCircuit(raw: unknown, exerciseCount: number): { circuit?: Circuit 
   return circuit ? { circuit } : {};
 }
 
+/**
+ * Absent des sauvegardes d'avant les lieux : la salle, sauf pour une séance
+ * venue d'un paquet poids du corps, qui a toujours été faite à la maison.
+ * Seule la maison est écrite ; la salle reste l'absence du champ.
+ */
+function parsePlace(raw: unknown, programId: string): { place?: "home" } {
+  if (raw === "home") return { place: "home" };
+  if (raw === undefined && isPackProgramId(programId)) return { place: "home" };
+  return {};
+}
+
 function parseExercise(raw: unknown, template: ExerciseTemplate | null, issues: Issues): ExerciseTemplate | null {
   if (!isObject(raw)) return template;
   const id = str(raw.id, template?.id ?? "");
@@ -181,13 +193,14 @@ function parsePrograms(raw: unknown, issues: Issues): Program[] {
 
     programs.push({
       id,
-      name: str(item.name, seed?.name ?? id),
+      name: migratePackProgramName(id, str(item.name, seed?.name ?? id)),
       focus: str(item.focus, seed?.focus ?? ""),
       accent: oneOf(item.accent, ACCENTS, seed?.accent ?? "acid"),
       warmup: str(item.warmup, seed?.warmup ?? ""),
       estimatedMinutes: Math.max(5, Math.round(num(item.estimatedMinutes, seed?.estimatedMinutes ?? 50))),
       exercises,
       ...parseCircuit(item.circuit, exercises.length),
+      ...parsePlace(item.place, id),
     });
   }
 
@@ -272,6 +285,7 @@ function parseSession(
     currentIndex: Math.min(Math.max(0, Math.round(num(raw.currentIndex, 0))), exercises.length - 1),
     exercises,
     ...parseCircuit(raw.circuit, exercises.length),
+    ...parsePlace(raw.place, str(raw.programId, "")),
   };
 }
 

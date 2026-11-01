@@ -1,6 +1,6 @@
 import type { OnboardingChoice } from "../domain/onboarding.ts";
 import type { PackId } from "../domain/packs.ts";
-import type { AppState, Effort, ExerciseTemplate, Program, Settings } from "../domain/types.ts";
+import type { AppState, Effort, ExerciseTemplate, Place, Program, Settings } from "../domain/types.ts";
 
 /**
  * Every state change in the app is one of these actions.
@@ -17,7 +17,8 @@ export type Action =
   | { type: "backup/snooze"; now: number }
   | { type: "program/setTarget"; programId: string; exerciseId: string; setIndex: number; value: number }
   | { type: "program/adjustTarget"; programId: string; exerciseId: string; setIndex: number; delta: number }
-  | { type: "program/create"; id: string }
+  /** `place` absent : une séance de salle. */
+  | { type: "program/create"; id: string; place?: Place }
   /** Ajoute les séances d'un paquet (poids du corps) à la suite des siennes. */
   | { type: "program/addPack"; packId: PackId }
   | { type: "program/duplicate"; programId: string; id: string }

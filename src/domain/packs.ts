@@ -5,14 +5,16 @@ import type { AppState, ExerciseTemplate, Program } from "./types.ts";
 /**
  * Les programmes « poids du corps » : de quoi quitter la salle sans perdre le fil.
  *
- * Deux paquets, qui s'ajoutent depuis l'écran Programmes :
+ * Deux programmes, au choix dans l'onglet Maison :
  *
- * - **Transition** — aucun matériel, pour tenir en attendant d'avoir une barre
- *   de traction et des élastiques, et pour quelqu'un qui n'enchaîne pas encore
- *   plusieurs séries de pompes : les pompes partent d'un appui surélevé.
- * - **Principal** — barre de porte + élastiques (une cinquantaine d'euros), avec
- *   le tirage doublé, des ischios, du travail sur une jambe et plus de poussée
- *   que de dips sur chaise.
+ * - **Sport hôtel** (`bodyweight-transition`) — zéro accessoire : une chambre,
+ *   une chaise, une table. Les pompes partent d'un appui surélevé, pour qui
+ *   n'enchaîne pas encore plusieurs séries.
+ * - **Sport maison** (`bodyweight`) — barre de porte + élastiques (une
+ *   cinquantaine d'euros), avec le tirage doublé, des ischios, du travail sur
+ *   une jambe et plus de poussée que de dips sur chaise.
+ *
+ * Les identifiants gardent leurs anciens noms : ils sont dans les sauvegardes.
  *
  * Même règle que les séances d'exemple : tout vient du catalogue, rien n'est
  * dupliqué. Les fiches sont clonées, donc modifier un programme ajouté ne touche
@@ -90,7 +92,7 @@ function exercises(items: PackExercise[]): ExerciseTemplate[] {
 }
 
 /**
- * Transition : aucune barre, aucun banc, aucun lest. Le catalogue décrit ces
+ * Sport hôtel : aucune barre, aucun banc, aucun lest. Le catalogue décrit ces
  * deux mouvements avec une barre ou un banc ; ici le support est le mur, une
  * table ou une chaise, et la démonstration montre la table.
  */
@@ -106,19 +108,20 @@ const CORE_FINISH: PackExercise[] = [
 
 const TRANSITION: Pack = {
   id: "bodyweight-transition",
-  name: "Transition sans matériel",
+  name: "Sport hôtel",
   summary:
-    "Quatre séances de 30 minutes avec ce qu'il y a à la maison, en attendant la barre et les élastiques. Les pompes partent d'un appui surélevé.",
-  equipment: "Une table solide, une chaise, une serviette",
+    "Zéro accessoire : quatre séances de 30 minutes dans une chambre, avec une chaise et une table. Les pompes partent d'un appui surélevé.",
+  equipment: "Rien : une table solide, une chaise, une serviette",
   programs: [
     {
       id: "bw-transition-1",
-      name: "Transition · Haut du corps",
+      name: "Haut du corps",
       focus: "Pompes inclinées · Rowing",
       accent: "acid",
       warmup: "4 min : cercles de poignets, rotations d'épaules, 10 scapula push-ups, quelques pompes au mur",
       estimatedMinutes: 30,
       circuit: { size: 5, restSeconds: CIRCUIT_REST_SHORT },
+      place: "home",
       exercises: exercises([
         {
           id: "incline-push-up",
@@ -147,12 +150,13 @@ const TRANSITION: Pack = {
     },
     {
       id: "bw-transition-2",
-      name: "Transition · Jambes",
+      name: "Jambes",
       focus: "Quadriceps · Ischios · Fessiers",
       accent: "orange",
       warmup: "4 min : squats lents, rotations de hanches, fentes dynamiques",
       estimatedMinutes: 30,
       circuit: { size: 5, restSeconds: CIRCUIT_REST_LONG },
+      place: "home",
       exercises: exercises([
         { id: "bodyweight-squat", repMin: 12, repMax: 15, tip: "Descente en 3 secondes, 1 seconde de pause en bas." },
         { id: "bodyweight-bulgarian-split-squat", repMin: 6, repMax: 10 },
@@ -170,12 +174,13 @@ const TRANSITION: Pack = {
     },
     {
       id: "bw-transition-3",
-      name: "Transition · Dos et abdos",
+      name: "Dos et abdos",
       focus: "Rowing · Gainage",
       accent: "sky",
       warmup: "4 min : dead bug, cat-cow, rotations du buste",
       estimatedMinutes: 30,
       circuit: { size: 5, restSeconds: CIRCUIT_REST_SHORT },
+      place: "home",
       exercises: exercises([
         {
           id: "inverted-row",
@@ -193,12 +198,13 @@ const TRANSITION: Pack = {
     },
     {
       id: "bw-transition-4",
-      name: "Transition · Full body",
+      name: "Full body",
       focus: "Pousser · Tirer · Jambes",
       accent: "violet",
       warmup: "4 min : marche rapide, montées de genoux, squats, pompes au mur",
       estimatedMinutes: 30,
       circuit: { size: 5, restSeconds: CIRCUIT_REST_LONG },
+      place: "home",
       exercises: exercises([
         { id: "incline-push-up", repMin: 8, repMax: 12, cue: INCLINED_CUE },
         {
@@ -230,19 +236,20 @@ const TRANSITION: Pack = {
 
 const MAIN: Pack = {
   id: "bodyweight",
-  name: "Poids du corps — barre et élastiques",
+  name: "Sport maison",
   summary:
-    "Quatre séances de 30 minutes avec une barre de traction de porte et des élastiques. Plus de 18 séries de tirage par semaine, avec ischios et travail sur une jambe.",
+    "Avec accessoires : quatre séances de 30 minutes avec une barre de traction de porte et des élastiques. Plus de 18 séries de tirage par semaine, avec ischios et travail sur une jambe.",
   equipment: "Barre de traction de porte, élastiques, sac à dos",
   programs: [
     {
       id: "bw-main-1",
-      name: "Poids du corps · Haut du corps",
+      name: "Haut du corps",
       focus: "Poussée · Tirage",
       accent: "acid",
       warmup: "4 min : cercles de poignets, 10 scapula push-ups, rotations d'épaules, 5 pompes faciles",
       estimatedMinutes: 30,
       circuit: { size: 5, restSeconds: CIRCUIT_REST_SHORT },
+      place: "home",
       exercises: exercises([
         { id: "band-assisted-pull-up", repMin: 5, repMax: 8 },
         { id: "push-up", repMin: 8, repMax: 15, tip: "Descente en 3 secondes. Au-delà de 15 propres, passe aux pompes déclinées." },
@@ -254,12 +261,13 @@ const MAIN: Pack = {
     },
     {
       id: "bw-main-2",
-      name: "Poids du corps · Jambes",
+      name: "Jambes",
       focus: "Unilatéral · Ischios · Fessiers",
       accent: "orange",
       warmup: "4 min : squats lents, rotations de hanches, fentes dynamiques",
       estimatedMinutes: 30,
       circuit: { size: 5, restSeconds: CIRCUIT_REST_LONG },
+      place: "home",
       exercises: exercises([
         { id: "bodyweight-bulgarian-split-squat", repMin: 8, repMax: 12 },
         { id: "slider-leg-curl", repMin: 8, repMax: 12 },
@@ -277,12 +285,13 @@ const MAIN: Pack = {
     },
     {
       id: "bw-main-3",
-      name: "Poids du corps · Dos et abdos",
+      name: "Dos et abdos",
       focus: "Tractions · Rowing · Gainage",
       accent: "sky",
       warmup: "4 min : dead bug, cat-cow, rotations du buste, scapula pulls",
       estimatedMinutes: 30,
       circuit: { size: 5, restSeconds: CIRCUIT_REST_SHORT },
+      place: "home",
       exercises: exercises([
         { id: "band-assisted-pull-up", repMin: 5, repMax: 8 },
         { id: "inverted-row", repMin: 10, repMax: 15 },
@@ -294,12 +303,13 @@ const MAIN: Pack = {
     },
     {
       id: "bw-main-4",
-      name: "Poids du corps · Full body",
+      name: "Full body",
       focus: "Tractions · Pompes · Jambes",
       accent: "violet",
       warmup: "4 min : marche rapide, montées de genoux, squats, 5 pompes faciles",
       estimatedMinutes: 30,
       circuit: { size: 6, restSeconds: CIRCUIT_REST_LONG },
+      place: "home",
       exercises: exercises([
         {
           id: "chin-up",
@@ -324,6 +334,42 @@ const MAIN: Pack = {
 };
 
 export const PACKS: readonly Pack[] = [TRANSITION, MAIN];
+
+/** La séance vient-elle d'un paquet ? Sert à ranger à la maison ceux ajoutés avant les lieux. */
+export function isPackProgramId(id: string): boolean {
+  return packOf(id) !== null;
+}
+
+/** Les préfixes des noms de séance avant que les programmes ne s'appellent Sport hôtel et Sport maison. */
+const LEGACY_PREFIXES = ["Transition · ", "Poids du corps · "];
+
+/**
+ * Le nom d'une séance de paquet enregistrée avant le renommage : « Transition ·
+ * Jambes » devient « Jambes ». Seul l'ancien nom par défaut change ; un nom
+ * tapé par la personne est gardé tel quel.
+ */
+export function migratePackProgramName(programId: string, name: string): string {
+  const current = PACKS.flatMap((pack) => pack.programs).find((program) => program.id === programId);
+  if (!current) return name;
+  const legacy = LEGACY_PREFIXES.some((prefix) => name === `${prefix}${current.name}`);
+  return legacy ? current.name : name;
+}
+
+/** Le programme maison d'où vient une séance, ou `null` pour une séance à soi. */
+export function packOf(programId: string): PackId | null {
+  return PACKS.find((pack) => pack.programs.some((program) => program.id === programId))?.id ?? null;
+}
+
+/**
+ * Le programme maison à montrer à l'ouverture : celui de la dernière séance
+ * faite s'il en vient, sinon le premier dont une séance est dans la
+ * bibliothèque. `null` tant qu'aucun ne l'est — l'onglet propose alors le choix.
+ */
+export function chosenHomePack(state: AppState): PackId | null {
+  const last = state.lastCompletedProgramId === null ? null : packOf(state.lastCompletedProgramId);
+  if (last !== null && hasPack(state, last)) return last;
+  return PACKS.find((pack) => hasPack(state, pack.id))?.id ?? null;
+}
 
 export function findPack(id: string): Pack | null {
   return PACKS.find((pack) => pack.id === id) ?? null;

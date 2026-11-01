@@ -123,7 +123,7 @@ function circuitRest(
 }
 
 /** La séance telle qu'elle sera une fois la série validée, statut compris. */
-function withSetDone(session: Session, index: number, setIndex: number): Session {
+export function withSetDone(session: Session, index: number, setIndex: number): Session {
   return {
     ...session,
     exercises: session.exercises.map((entry, position) => {

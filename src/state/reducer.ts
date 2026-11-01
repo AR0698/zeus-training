@@ -154,7 +154,7 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case "program/create": {
       const accent = ACCENTS[state.programs.length % ACCENTS.length] ?? "acid";
-      return { ...state, programs: [...state.programs, makeEmptyProgram(action.id, accent)] };
+      return { ...state, programs: [...state.programs, makeEmptyProgram(action.id, accent, action.place)] };
     }
 
     case "program/addPack":

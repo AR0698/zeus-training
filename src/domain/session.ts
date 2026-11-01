@@ -66,6 +66,7 @@ export function createSession({ program, now, id, lastSessionDate }: SessionSeed
       currentIndex: 0,
       exercises,
       ...(circuit ? { circuit } : {}),
+      ...(program.place === "home" ? { place: "home" as const } : {}),
     },
     layoff: { applied, days },
   };
