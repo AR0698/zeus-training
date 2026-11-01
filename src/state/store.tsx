@@ -12,7 +12,7 @@ import {
 import { createInitialState } from "../domain/seed.ts";
 import type { AppState } from "../domain/types.ts";
 import { loadState, requestPersistentStorage, saveState, storageKind } from "../storage/db.ts";
-import { UNDOABLE, type Action } from "./actions.ts";
+import { SAVE_NOW, UNDOABLE, type Action } from "./actions.ts";
 import { reducer } from "./reducer.ts";
 import { parseAppState } from "./schema.ts";
 
@@ -60,6 +60,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const saveTimer = useRef<number | null>(null);
   const pendingSave = useRef(false);
+  const saveNow = useRef(false);
 
   // ---- boot ---------------------------------------------------------------
   // No "already hydrated" guard here: under StrictMode the effect runs, unmounts
@@ -106,7 +107,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     pendingSave.current = true;
     setSaving(true);
     if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
-    saveTimer.current = window.setTimeout(() => void flush(), SAVE_DEBOUNCE_MS);
+    const delay = saveNow.current ? 0 : SAVE_DEBOUNCE_MS;
+    saveNow.current = false;
+    saveTimer.current = window.setTimeout(() => void flush(), delay);
     return () => {
       if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
     };
@@ -127,6 +130,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // ---- dispatch with undo -------------------------------------------------
   const dispatch = useCallback((action: Action) => {
+    if (SAVE_NOW.has(action.type)) saveNow.current = true;
     if (UNDOABLE.has(action.type)) {
       undoStack.current = [latest.current, ...undoStack.current].slice(0, UNDO_DEPTH);
       setUndoDepth(undoStack.current.length);

@@ -20,6 +20,7 @@ import type {
   SessionExercise,
 } from "./domain/types.ts";
 import { downloadBackup } from "./storage/backup.ts";
+import { useAppUpdate } from "./hooks/useAppUpdate.ts";
 import { useHaptics } from "./hooks/useHaptics.ts";
 import { useNow } from "./hooks/useNow.ts";
 import { useRestTimer } from "./hooks/useRestTimer.ts";
@@ -35,6 +36,7 @@ import { Toaster, useToaster, type ToastTone } from "./ui/components/Toast.tsx";
 import { preloadFigures } from "./ui/figures.ts";
 import {
   IconAlert,
+  IconDownload,
   IconDumbbell,
   IconHome,
   IconSettings,
@@ -84,6 +86,7 @@ export function App() {
   // One clock for the whole app: to the second during a session, to the minute
   // otherwise. No screen ever calls Date.now() while rendering.
   const now = useNow(true, state.session === null ? 60_000 : 1000);
+  const update = useAppUpdate();
 
   useTheme(state.settings.theme);
   useWakeLock(state.settings.keepAwake && state.session !== null);
@@ -282,6 +285,7 @@ export function App() {
 
     return {
       update: (patch) => dispatch({ type: "program/update", programId: program.id, patch }),
+      setCircuit: (circuit) => dispatch({ type: "program/setCircuit", programId: program.id, circuit }),
       moveProgram: (direction) =>
         dispatch({ type: "program/move", programId: program.id, direction }),
       duplicate: () => {
@@ -443,6 +447,19 @@ export function App() {
           <div className="banner banner-danger" role="alert">
             <IconAlert size={18} />
             <p>{storageError}</p>
+          </div>
+        )}
+
+        {/* Jamais en pleine séance : la proposition attend sur les autres écrans. */}
+        {update.ready && (
+          <div className="banner banner-accent banner-update" role="status">
+            <IconDownload size={18} />
+            <p>
+              <strong>Nouvelle version disponible.</strong> Tes séances sont enregistrées.
+            </p>
+            <button type="button" className="button button-accent" onClick={update.reload}>
+              Mettre à jour
+            </button>
           </div>
         )}
 

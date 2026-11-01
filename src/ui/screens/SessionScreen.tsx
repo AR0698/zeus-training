@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { circuitPosition, type CircuitPosition } from "../../domain/circuit.ts";
+import { circuitPosition, manualRestSeconds, type CircuitPosition } from "../../domain/circuit.ts";
 import { upNext } from "../../domain/place.ts";
 import {
   formatClock,
@@ -176,10 +176,10 @@ export function SessionScreen({
             total={session.exercises.length}
             circuit={circuitPosition(session, session.currentIndex)}
             cards={cards}
+            restSeconds={manualRestSeconds(session, session.currentIndex, settings.defaultRestSeconds)}
             next={next ? (next.replacedBy ?? next.name) : null}
             previousNote={lastExerciseNote(history, current.exerciseId)}
             now={now}
-            settings={settings}
             handlers={handlers}
           />
         )}
@@ -304,10 +304,10 @@ function ExerciseCard({
   total,
   circuit,
   cards,
+  restSeconds,
   next,
   previousNote,
   now,
-  settings,
   handlers,
 }: {
   ref: React.Ref<HTMLElement>;
@@ -318,18 +318,18 @@ function ExerciseCard({
   circuit: CircuitPosition | null;
   /** Séance à la maison : une carte par série au lieu du tableau. */
   cards: boolean;
+  /** Repos du bouton « Repos » : celui d'entre les tours en circuit. */
+  restSeconds: number;
   /** L'exercice qui suivra, pour le « Ensuite : … » de la carte. */
   next: string | null;
   previousNote: { note: string; date: number } | null;
   now: number;
-  settings: Settings;
   handlers: SessionHandlers;
 }) {
   const allSetsDone = entry.sets.every((set) => set.done);
   const timed = entry.unit === "sec";
   // Poids du corps : pas de colonne de charge, seules les répétitions comptent.
   const bodyweight = entry.unit === "reps";
-  const restSeconds = entry.restSeconds > 0 ? entry.restSeconds : settings.defaultRestSeconds;
   // En cartes, une seule série à la fois : la première qui reste à faire. Un
   // exercice déjà fini retrouve son tableau, pour pouvoir annuler une série.
   const nextSetIndex = entry.sets.findIndex((set) => !set.done);

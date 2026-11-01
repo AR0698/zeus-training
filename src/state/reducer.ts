@@ -1,5 +1,5 @@
 import { ACCENTS, SESSION_MINUTES, makeEmptyProgram, patchExercise } from "../domain/library.ts";
-import { isInCircuit, nextCircuitIndex } from "../domain/circuit.ts";
+import { fitCircuit, isInCircuit, nextCircuitIndex } from "../domain/circuit.ts";
 import { completeOnboarding } from "../domain/onboarding.ts";
 import { addPack } from "../domain/packs.ts";
 import { clampLoad, applySessionToPrograms, openingReps, weightStep } from "../domain/progression.ts";
@@ -215,6 +215,22 @@ export function reducer(state: AppState, action: Action): AppState {
               ),
             ),
           };
+        }),
+      };
+    }
+
+    case "program/setCircuit": {
+      return {
+        ...state,
+        programs: state.programs.map((program) => {
+          if (program.id !== action.programId) return program;
+          // Sans circuit valable, le champ disparaît : la séance redevient
+          // exercice par exercice, comme une sauvegarde d'avant les tours.
+          const circuit = action.circuit && fitCircuit(action.circuit, program.exercises.length);
+          if (circuit) return { ...program, circuit };
+          const { circuit: removed, ...rest } = program;
+          void removed;
+          return rest;
         }),
       };
     }

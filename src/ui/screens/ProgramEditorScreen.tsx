@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { formatMinutes, formatRepRange, unitLabel } from "../../domain/format.ts";
+import { CIRCUIT_REST, circuitSizeOptions } from "../../domain/circuit.ts";
+import { formatDuration, formatMinutes, formatRepRange, unitLabel } from "../../domain/format.ts";
 import { ACCENT_LABELS, ACCENTS, SESSION_MINUTES } from "../../domain/library.ts";
-import type { ExerciseTemplate, Program } from "../../domain/types.ts";
+import type { Circuit, ExerciseTemplate, Program } from "../../domain/types.ts";
 import { Sheet } from "../components/Sheet.tsx";
 import { Stepper } from "../components/Stepper.tsx";
 import {
@@ -20,6 +21,8 @@ import { ExercisePickerSheet } from "./ExercisePickerSheet.tsx";
 
 export type ProgramEditorHandlers = {
   update: (patch: Partial<Pick<Program, "name" | "focus" | "warmup" | "accent" | "estimatedMinutes">>) => void;
+  /** Le mode tours : les `size` premiers exercices enchaînés ; `null` pour l'enlever. */
+  setCircuit: (circuit: Circuit | null) => void;
   moveProgram: (direction: -1 | 1) => void;
   duplicate: () => void;
   remove: () => void;
@@ -176,6 +179,8 @@ export function ProgramEditorScreen({
               ))}
             </div>
           </div>
+
+          <CircuitField program={program} onChange={handlers.setCircuit} />
         </section>
 
         <section className="card panel">
@@ -356,5 +361,67 @@ export function ProgramEditorScreen({
         </div>
       </Sheet>
     </>
+  );
+}
+
+/**
+ * Le mode tours : combien des premiers exercices s'enchaînent, et le repos
+ * entre deux tours. Leur nombre de séries devient le nombre de tours.
+ */
+function CircuitField({
+  program,
+  onChange,
+}: {
+  program: Program;
+  onChange: (circuit: Circuit | null) => void;
+}) {
+  const sizes = circuitSizeOptions(program.exercises.length);
+  const circuit = program.circuit;
+  const rest = circuit?.restSeconds ?? CIRCUIT_REST.initial;
+  if (sizes.length === 0) return null;
+
+  return (
+    <div className="field" role="group" aria-labelledby="program-circuit-label">
+      <span className="field-label" id="program-circuit-label">Mode tours</span>
+      <div className="chip-row">
+        <button
+          type="button"
+          className={`chip ${circuit ? "" : "is-active"}`}
+          aria-pressed={!circuit}
+          onClick={() => onChange(null)}
+        >
+          Non
+        </button>
+        {sizes.map((size) => (
+          <button
+            type="button"
+            key={size}
+            className={`chip ${circuit?.size === size ? "is-active" : ""}`}
+            aria-pressed={circuit?.size === size}
+            onClick={() => onChange({ size, restSeconds: rest })}
+          >
+            {size} exercices
+          </button>
+        ))}
+      </div>
+      {circuit && (
+        <div className="duration-stepper">
+          <Stepper
+            value={rest}
+            unit=""
+            step={CIRCUIT_REST.step}
+            min={CIRCUIT_REST.min}
+            label="Repos entre les tours"
+            formatValue={formatDuration}
+            onAdjust={(delta) => onChange({ ...circuit, restSeconds: Math.max(CIRCUIT_REST.min, rest + delta) })}
+            onSet={(value) => onChange({ ...circuit, restSeconds: Math.max(CIRCUIT_REST.min, value) })}
+          />
+        </div>
+      )}
+      <span className="field-help">
+        Les premiers exercices s&apos;enchaînent, une série de chacun, avec le repos seulement
+        entre deux tours. Leur nombre de séries devient le nombre de tours.
+      </span>
+    </div>
   );
 }

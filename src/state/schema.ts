@@ -1,6 +1,6 @@
 import { fitCircuit } from "../domain/circuit.ts";
 import { catalogTemplate } from "../domain/catalog/index.ts";
-import { isPackProgramId, migratePackProgramName } from "../domain/packs.ts";
+import { isPackProgramId, migrateHotelExercises, migratePackProgramName } from "../domain/packs.ts";
 import { NOTE_MAX_LENGTH, cleanNote } from "../domain/session.ts";
 import {
   CURRENT_VERSION,
@@ -179,9 +179,12 @@ function parsePrograms(raw: unknown, issues: Issues): Program[] {
     if (!id) continue;
     const seed = SEED_PROGRAMS.find((program) => program.id === id) ?? null;
     const rawExercises = Array.isArray(item.exercises) ? item.exercises : [];
-    const exercises = rawExercises
-      .map((exercise, index) => parseExercise(exercise, seed?.exercises[index] ?? null, issues))
-      .filter((exercise): exercise is ExerciseTemplate => exercise !== null);
+    const exercises = migrateHotelExercises(
+      id,
+      rawExercises
+        .map((exercise, index) => parseExercise(exercise, seed?.exercises[index] ?? null, issues))
+        .filter((exercise): exercise is ExerciseTemplate => exercise !== null),
+    );
 
     // A seeded program with no readable exercise is corruption; a user-made one
     // is simply a program still being written. Only the first gets restored.

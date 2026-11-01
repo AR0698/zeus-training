@@ -215,6 +215,8 @@
   background: var(--accent-soft);
 }
 .banner-accent > svg { color: var(--accent-text); }
+.banner-update { align-items: center; }
+.banner-update p { flex: 1; margin: 0; }
 
 .empty-state {
   display: grid;

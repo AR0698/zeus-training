@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { chosenHomePack, findPack, packOf, packPrograms } from "../src/domain/packs.ts";
+import { manualRestSeconds } from "../src/domain/circuit.ts";
 import { programPlace, programsAt, upNext } from "../src/domain/place.ts";
+import { nextProgram } from "../src/domain/progression.ts";
 import { SEED_PROGRAMS, createInitialState } from "../src/domain/seed.ts";
 import type { AppState, Program } from "../src/domain/types.ts";
 import { reducer } from "../src/state/reducer.ts";
@@ -150,4 +152,74 @@ test("à l'ouverture, l'onglet Maison reprend le programme de la dernière séan
   const both = withPrograms([...packPrograms("bodyweight-transition"), ...packPrograms("bodyweight")]);
   assert.equal(chosenHomePack(both), "bodyweight-transition");
   assert.equal(chosenHomePack({ ...both, lastCompletedProgramId: "bw-main-2" }), "bodyweight");
+});
+
+test("une séance Sport hôtel déjà enregistrée perd ses exercices à table ou serviette", () => {
+  const fresh = packPrograms("bodyweight-transition")[0]!;
+  const legacy = {
+    ...fresh,
+    exercises: [
+      fresh.exercises[0]!,
+      { ...fresh.exercises[1]!, id: "inverted-row", name: "Rowing inversé" },
+      ...fresh.exercises.slice(2, 4),
+      { ...fresh.exercises[4]!, id: "towel-row", name: "Rowing serviette" },
+    ],
+  };
+  const raw = JSON.parse(JSON.stringify(withPrograms([legacy])));
+  const { state } = parseAppState(raw, NOW);
+  const ids = state.programs[0]!.exercises.map((exercise) => exercise.id);
+  assert.deepEqual(ids, fresh.exercises.map((exercise) => exercise.id));
+  assert.equal(ids.includes("inverted-row") || ids.includes("towel-row"), false);
+});
+
+test("Aujourd'hui fait tourner les séances du même lieu que la dernière faite", () => {
+  const [gymA, gymB] = [SEED_PROGRAMS[0]!, SEED_PROGRAMS[1]!];
+  const [homeA, homeB] = [HOME[0]!, HOME[1]!];
+  const programs = [gymA, homeA, gymB, homeB];
+  assert.equal(nextProgram(programs, null)?.id, gymA.id);
+  assert.equal(nextProgram(programs, gymA.id)?.id, gymB.id);
+  assert.equal(nextProgram(programs, gymB.id)?.id, gymA.id);
+  assert.equal(nextProgram(programs, homeA.id)?.id, homeB.id);
+  assert.equal(nextProgram(programs, homeB.id)?.id, homeA.id);
+});
+
+test("en circuit, le bouton Repos propose le repos entre les tours", () => {
+  const session = start(CIRCUIT_PROGRAM).session!;
+  assert.equal(manualRestSeconds(session, 0, 90), 60);
+  // Le face pull, en séries classiques, garde son propre repos.
+  const facePull = session.exercises[5]!;
+  assert.equal(manualRestSeconds(session, 5, 90), facePull.restSeconds);
+});
+
+test("le tour se règle depuis l'éditeur, borné aux exercices de la séance", () => {
+  let state = withPrograms([SEED_PROGRAMS[0]!]);
+  const id = SEED_PROGRAMS[0]!.id;
+  state = reducer(state, { type: "program/setCircuit", programId: id, circuit: { size: 99, restSeconds: 70 } });
+  assert.deepEqual(state.programs[0]!.circuit, { size: SEED_PROGRAMS[0]!.exercises.length, restSeconds: 70 });
+  state = reducer(state, { type: "program/setCircuit", programId: id, circuit: null });
+  assert.equal("circuit" in state.programs[0]!, false);
+  state = reducer(state, { type: "program/setCircuit", programId: id, circuit: { size: 1, restSeconds: 60 } });
+  assert.equal("circuit" in state.programs[0]!, false);
+});
+
+test("la fin de séance ne prétend plus recalculer les charges", () => {
+  let state = start(SEED_PROGRAMS[0]!);
+  for (const entry of state.session!.exercises) {
+    for (let setIndex = 0; setIndex < entry.sets.length; setIndex += 1) {
+      state = reducer(state, { type: "session/toggleSet", exerciseId: entry.exerciseId, setIndex, now: NOW });
+    }
+  }
+  state = reducer(state, { type: "session/finish", now: NOW + 3_600_000 });
+  assert.equal(state.history[0]!.note, "Séance complète — charges gardées pour la prochaine fois.");
+});
+
+test("Dos et abdos garde ses cinq exercices quand le rowing à table disparaît", () => {
+  const fresh = packPrograms("bodyweight-transition")[2]!;
+  const legacy = {
+    ...fresh,
+    exercises: [{ ...fresh.exercises[4]!, id: "inverted-row" }, ...fresh.exercises.slice(0, 4)],
+  };
+  const { state } = parseAppState(JSON.parse(JSON.stringify(withPrograms([legacy]))), NOW);
+  const ids = state.programs[0]!.exercises.map((exercise) => exercise.id);
+  assert.deepEqual([...ids].sort(), fresh.exercises.map((exercise) => exercise.id).sort());
 });

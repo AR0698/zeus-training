@@ -11,7 +11,7 @@
  * requested, which keeps the worker correct whatever Vite names the bundles.
  */
 
-const VERSION = "v3";
+const VERSION = "v4";
 const SHELL_CACHE = `zeus-shell-${VERSION}`;
 const ASSET_CACHE = `zeus-assets-${VERSION}`;
 const FONT_CACHE = `zeus-fonts-${VERSION}`;

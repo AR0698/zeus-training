@@ -191,7 +191,7 @@ export function finishSession(
     completedSets: progress.doneSets,
     volume: sessionVolume(session),
     note: complete
-      ? "Séance complète — cibles recalculées."
+      ? "Séance complète — charges gardées pour la prochaine fois."
       : `${missing} exercice${missing > 1 ? "s" : ""} à reprendre la prochaine fois.`,
     exerciseNotes: collectNotes(session),
     personalRecords,

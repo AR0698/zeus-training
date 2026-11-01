@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { circuitPosition, circuitSummary, restAfterValidation } from "../src/domain/circuit.ts";
+import { circuitPosition, circuitSizeOptions, circuitSummary, restAfterValidation } from "../src/domain/circuit.ts";
 import { packPrograms } from "../src/domain/packs.ts";
 import { SEED_PROGRAMS, createInitialState } from "../src/domain/seed.ts";
 import { createSession } from "../src/domain/session.ts";
@@ -215,4 +215,10 @@ test("chaque séance des paquets a son circuit, et ses exercices ont 3 tours", (
       assert.equal(exercise.sets, 3, `${program.id} · ${exercise.id}`);
     }
   }
+});
+
+test("l'éditeur propose de 2 exercices à tous ceux de la séance", () => {
+  assert.deepEqual(circuitSizeOptions(5), [2, 3, 4, 5]);
+  assert.deepEqual(circuitSizeOptions(1), []);
+  assert.deepEqual(circuitSizeOptions(0), []);
 });

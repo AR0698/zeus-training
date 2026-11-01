@@ -1,3 +1,4 @@
+import { programPlace } from "./place.ts";
 import type { ExerciseTemplate, MuscleGroup, Program, Session, SessionExercise, Unit } from "./types.ts";
 
 /**
@@ -223,6 +224,9 @@ export function applySessionToPrograms(programs: Program[], session: Session): P
  * The next program in the rotation, or null when the user has deleted them all.
  * Returning null rather than throwing keeps an empty library a normal state the
  * UI can render, not a crash.
+ *
+ * Salle et maison tournent chacune de leur côté : après une séance à la maison
+ * vient la séance maison suivante, jamais une séance de salle intercalée.
  */
 export function nextProgram(
   programs: Program[],
@@ -230,8 +234,9 @@ export function nextProgram(
 ): Program | null {
   const fallback = programs[0];
   if (!fallback) return null;
-  if (lastCompletedProgramId === null) return fallback;
-  const index = programs.findIndex((program) => program.id === lastCompletedProgramId);
-  if (index === -1) return fallback;
-  return programs[(index + 1) % programs.length] ?? fallback;
+  const last = programs.find((program) => program.id === lastCompletedProgramId);
+  if (!last) return fallback;
+  const cycle = programs.filter((program) => programPlace(program) === programPlace(last));
+  const index = cycle.indexOf(last);
+  return cycle[(index + 1) % cycle.length] ?? fallback;
 }
