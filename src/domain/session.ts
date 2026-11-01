@@ -1,5 +1,6 @@
-import { layoffAdjustment, openingWeights } from "./progression.ts";
+import { layoffAdjustment, openingReps, openingWeights } from "./progression.ts";
 import type {
+  ExerciseNote,
   HistoryEntry,
   PersonalRecord,
   Program,
@@ -7,6 +8,9 @@ import type {
   SessionExercise,
   SetEntry,
 } from "./types.ts";
+
+/** Long enough for "siège cran 4, douleur épaule gauche", short enough to stay a note. */
+export const NOTE_MAX_LENGTH = 140;
 
 /** A session left running for longer than this is almost certainly forgotten. */
 export const STALE_SESSION_HOURS = 5;
@@ -41,9 +45,10 @@ export function createSession({ program, now, id, lastSessionDate }: SessionSeed
     effort: null,
     status: "pending",
     replacedBy: null,
+    note: "",
     sets: openingWeights(exercise, factor).map((weight) => ({
       weight,
-      reps: exercise.repMin,
+      reps: openingReps(exercise.unit, exercise.repMin),
       done: false,
       pr: false,
     })),
@@ -153,7 +158,8 @@ export function finishSession(
   const personalRecords: string[] = [];
 
   for (const entry of session.exercises) {
-    if (entry.unit !== "kg") continue;
+    // A one-off substitute counts in the volume, never in the record book.
+    if (entry.unit !== "kg" || entry.replacedBy !== null) continue;
     const best = bestSet(entry);
     if (!best) continue;
     const previous = nextRecords[entry.exerciseId];
@@ -183,8 +189,39 @@ export function finishSession(
     note: complete
       ? "Séance complète — cibles recalculées."
       : `${missing} exercice${missing > 1 ? "s" : ""} à reprendre la prochaine fois.`,
+    exerciseNotes: collectNotes(session),
     personalRecords,
   };
 
   return { entry, records: nextRecords, complete };
+}
+
+/** Trims a note and caps its length; whitespace alone counts as no note. */
+export function cleanNote(raw: string): string {
+  return raw.trim().slice(0, NOTE_MAX_LENGTH);
+}
+
+function collectNotes(session: Session): ExerciseNote[] {
+  return session.exercises
+    .map((entry) => ({
+      exerciseId: entry.exerciseId,
+      name: entry.replacedBy ?? entry.shortName,
+      note: cleanNote(entry.note),
+    }))
+    .filter((item) => item.note !== "");
+}
+
+/**
+ * The most recent note left on an exercise, to remind it next time.
+ * `history` is sorted newest first, as the store keeps it.
+ */
+export function lastExerciseNote(
+  history: readonly HistoryEntry[],
+  exerciseId: string,
+): { note: string; date: number } | null {
+  for (const entry of history) {
+    const match = entry.exerciseNotes.find((item) => item.exerciseId === exerciseId);
+    if (match) return { note: match.note, date: entry.date };
+  }
+  return null;
 }

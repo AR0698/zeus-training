@@ -77,6 +77,8 @@ export type SessionExercise = {
   status: SessionExerciseStatus;
   /** Name of the substitute movement when the machine was taken. */
   replacedBy: string | null;
+  /** Free text typed during the session ("siège cran 4"). Empty when unused. */
+  note: string;
 };
 
 export type Session = {
@@ -87,6 +89,14 @@ export type Session = {
   startedAt: number;
   currentIndex: number;
   exercises: SessionExercise[];
+};
+
+/** A per-exercise note kept with the session that produced it. */
+export type ExerciseNote = {
+  exerciseId: string;
+  /** Name shown at the time, substitute included, so the note still reads right. */
+  name: string;
+  note: string;
 };
 
 export type HistoryEntry = {
@@ -100,7 +110,10 @@ export type HistoryEntry = {
   completedSets: number;
   /** Sum of weight × reps over validated sets (seconds-based work excluded). */
   volume: number;
+  /** Status line generated at the end of the session — not typed by the user. */
   note: string;
+  /** What the user wrote on each exercise, in session order. */
+  exerciseNotes: ExerciseNote[];
   /** Short names of exercises that produced a personal record. */
   personalRecords: string[];
 };
@@ -119,6 +132,8 @@ export type Settings = {
   /** Fallback rest duration when an exercise has none, in seconds. */
   defaultRestSeconds: number;
   vibration: boolean;
+  /** Short beeps at the end of the rest. Off by default: a gym phone that beeps unasked surprises everyone. */
+  sounds: boolean;
   /** Hold a screen wake lock during a session. */
   keepAwake: boolean;
   displayName: string;
@@ -139,6 +154,12 @@ export type AppState = {
   backupPromptedAt: number | null;
   programs: Program[];
   session: Session | null;
+  /**
+   * La dernière séance abandonnée, gardée pour pouvoir la reprendre : un
+   * « Abandonner » touché par erreur ne doit rien coûter. Effacée dès qu'une
+   * nouvelle séance démarre.
+   */
+  abandonedSession: Session | null;
   history: HistoryEntry[];
   records: Record<string, PersonalRecord>;
   lastCompletedProgramId: string | null;

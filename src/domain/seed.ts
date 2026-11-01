@@ -114,13 +114,14 @@ export function examplePrograms(): Program[] {
  * Déclarée ici, avec la fabrique d'état neuf, pour que les deux ne puissent pas
  * diverger : `state/schema.ts` la réexporte et l'utilise pour les migrations.
  */
-export const CURRENT_VERSION = 2;
+export const CURRENT_VERSION = 3;
 
 export const DEFAULT_SETTINGS: Settings = {
   theme: "auto",
   autoRest: true,
   defaultRestSeconds: 90,
   vibration: true,
+  sounds: false,
   keepAwake: true,
   displayName: "",
 };
@@ -138,6 +139,7 @@ export function createInitialState(now: number): AppState {
     backupPromptedAt: null,
     programs: [],
     session: null,
+    abandonedSession: null,
     history: [],
     records: {},
     lastCompletedProgramId: null,

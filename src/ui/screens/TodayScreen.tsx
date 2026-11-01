@@ -1,7 +1,8 @@
-import { formatLoad, formatRelativeDay, formatRepRange } from "../../domain/format.ts";
+import { formatLoad, formatMinutes, formatRelativeDay, formatRepRange } from "../../domain/format.ts";
 import { LAYOFF_DAYS, daysBetween, nextProgram } from "../../domain/progression.ts";
+import { sessionProgress } from "../../domain/session.ts";
 import { lastSessionDate, overview, pendingIncreases } from "../../domain/stats.ts";
-import type { AppState, Program } from "../../domain/types.ts";
+import type { AppState, Program, Session } from "../../domain/types.ts";
 import {
   IconAlert,
   IconArrowRight,
@@ -11,6 +12,7 @@ import {
   IconFlame,
   IconTrend,
   IconTrophy,
+  IconUndo,
 } from "../icons.tsx";
 import { detailFromTemplate, type ExerciseDetail } from "../types.ts";
 
@@ -22,12 +24,16 @@ export function TodayScreen({
   onStart,
   onOpenDetail,
   onOpenPrograms,
+  onRestoreAbandoned,
+  onDiscardAbandoned,
 }: {
   state: AppState;
   now: number;
   onStart: (program: Program) => void;
   onOpenDetail: (detail: ExerciseDetail) => void;
   onOpenPrograms: () => void;
+  onRestoreAbandoned: () => void;
+  onDiscardAbandoned: () => void;
 }) {
   const recommended = nextProgram(state.programs, state.lastCompletedProgramId);
   const stats = overview(state, now);
@@ -62,6 +68,15 @@ export function TodayScreen({
         </div>
       )}
 
+      {state.abandonedSession && (
+        <AbandonedSessionCard
+          session={state.abandonedSession}
+          now={now}
+          onRestore={onRestoreAbandoned}
+          onDiscard={onDiscardAbandoned}
+        />
+      )}
+
       {recommended === null ? (
         <section className="card empty-state">
           <IconDumbbell size={26} />
@@ -81,7 +96,7 @@ export function TodayScreen({
           <span className="hero-chip">Recommandé</span>
           <span className="hero-duration">
             <IconClock size={15} />
-            {recommended.estimatedMinutes} min
+            {formatMinutes(recommended.estimatedMinutes)}
           </span>
         </div>
 
@@ -147,7 +162,7 @@ export function TodayScreen({
             <h3>{last ? last.programName : "Aucune séance"}</h3>
             <p>
               {last
-                ? `${formatRelativeDay(last.date, now)} · ${last.durationMinutes} min · ${last.completedExercises}/${last.totalExercises} exercices`
+                ? `${formatRelativeDay(last.date, now)} · ${formatMinutes(last.durationMinutes)} · ${last.completedExercises}/${last.totalExercises} exercices`
                 : "Ton historique et tes records apparaîtront ici après la première séance."}
             </p>
           </div>
@@ -179,13 +194,50 @@ export function TodayScreen({
               <strong>{program.name}</strong>
               <small>{program.focus}</small>
               <span className="program-tile-meta tabular">
-                {program.exercises.length} exercices · {program.estimatedMinutes} min
+                {program.exercises.length} exercices · {formatMinutes(program.estimatedMinutes)}
               </span>
             </button>
           ))}
         </div>
       </section>
     </>
+  );
+}
+
+function AbandonedSessionCard({
+  session,
+  now,
+  onRestore,
+  onDiscard,
+}: {
+  session: Session;
+  now: number;
+  onRestore: () => void;
+  onDiscard: () => void;
+}) {
+  const { doneSets, totalSets } = sessionProgress(session);
+  const plural = doneSets > 1 ? "s" : "";
+
+  return (
+    <section className="banner banner-accent abandoned-card" aria-labelledby="abandoned-title">
+      <IconUndo size={18} />
+      <div className="abandoned-body">
+        <p>
+          <strong id="abandoned-title">{session.programName} a été abandonnée.</strong>{" "}
+          Commencée {formatRelativeDay(session.startedAt, now)} · {doneSets}/
+          {totalSets} série{plural} validée{plural}. Tu peux la reprendre là où tu l&apos;as
+          laissée.
+        </p>
+        <div className="abandoned-actions">
+          <button type="button" className="button button-accent" onClick={onRestore}>
+            Reprendre la séance
+          </button>
+          <button type="button" className="button button-ghost" onClick={onDiscard}>
+            Oublier
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -212,9 +264,13 @@ function WeekRing({ done, target, streak }: { done: number; target: number; stre
         <small>/{target} sem.</small>
       </div>
       {streak > 1 && (
-        <span className="streak-badge" title={`${streak} semaines d'affilée`}>
+        <span className="streak-badge">
           <IconFlame size={13} />
           <span className="tabular">{streak}</span>
+          {/* Même défaut que la coupe du record : la flamme est `aria-hidden`
+              et un `title` ne se montre pas au doigt, donc le nombre était
+              annoncé seul — « 4 », sans dire 4 de quoi. */}
+          <span className="visually-hidden">semaines d&apos;affilée</span>
         </span>
       )}
     </div>

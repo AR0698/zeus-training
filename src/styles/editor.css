@@ -23,7 +23,12 @@
   min-height: var(--tap-comfort);
 }
 
-.field-input-short { max-width: 8rem; }
+/* Assez large pour « 3 h 55 » entre les deux cibles de 44 px, pas plus :
+   les choix rapides en dessous font le gros du travail. */
+.duration-stepper {
+  max-width: 13rem;
+  margin-top: var(--space-2);
+}
 
 .field-textarea {
   min-height: 4.5rem;

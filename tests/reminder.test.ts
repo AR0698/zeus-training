@@ -27,6 +27,7 @@ function session(date: number): HistoryEntry {
     volume: 4200,
     note: "",
     personalRecords: [],
+    exerciseNotes: [],
   };
 }
 

@@ -34,6 +34,16 @@ export function clampLoad(value: number): number {
   return Math.max(0, roundLoad(value));
 }
 
+/** Reps, or seconds held for timed work — the number the rep range is about. */
+function setPerformance(unit: Unit, set: { weight: number; reps: number }): number {
+  return unit === "sec" ? set.weight : set.reps;
+}
+
+/** Timed work carries no reps: its sets start at zero so seconds never show as rounds. */
+export function openingReps(unit: Unit, repMin: number): number {
+  return unit === "sec" ? 0 : repMin;
+}
+
 export type ProgressionAction = "increase" | "hold" | "deload";
 
 export type ProgressionDecision = {
@@ -65,7 +75,21 @@ export function decideProgression(entry: SessionExercise): ProgressionDecision {
     };
   }
 
-  const belowRange = completed.some((set) => set.reps < entry.repMin);
+  const timed = entry.unit === "sec";
+  const rangeUnit = timed ? "s" : "reps";
+  const performance = (set: { weight: number; reps: number }) => setPerformance(entry.unit, set);
+
+  const belowRange = completed.some((set) => performance(set) < entry.repMin);
+  // Held seconds are both the load and the result: the next target is simply
+  // what was held, never 10 % less on top of it.
+  if (belowRange && timed) {
+    return {
+      action: "hold",
+      reason: `Série sous ${entry.repMin} s — on repart de la durée tenue.`,
+      nextWeights: currentWeights,
+      lastWeights,
+    };
+  }
   if (belowRange) {
     return {
       action: "deload",
@@ -78,13 +102,13 @@ export function decideProgression(entry: SessionExercise): ProgressionDecision {
   }
 
   const allSetsDone = completed.length === entry.sets.length;
-  const atTopOfRange = completed.every((set) => set.reps >= entry.repMax);
+  const atTopOfRange = completed.every((set) => performance(set) >= entry.repMax);
   const feltHard = entry.effort === "hard";
 
   if (allSetsDone && atTopOfRange && !feltHard) {
     return {
       action: "increase",
-      reason: `Toutes les séries à ${entry.repMax} reps — on monte.`,
+      reason: `Toutes les séries à ${entry.repMax} ${rangeUnit} — on monte.`,
       nextWeights: currentWeights.map((weight) =>
         clampLoad(weight + weightStep(entry.unit, entry.group, weight)),
       ),
@@ -93,10 +117,12 @@ export function decideProgression(entry: SessionExercise): ProgressionDecision {
   }
 
   const reason = feltHard
-    ? "Ressenti difficile — on consolide avant d'ajouter du poids."
+    ? timed
+      ? "Ressenti difficile — on consolide avant d'allonger la durée."
+      : "Ressenti difficile — on consolide avant d'ajouter du poids."
     : !allSetsDone
       ? "Séries incomplètes — cible maintenue."
-      : `Reste à atteindre ${entry.repMax} reps sur toutes les séries.`;
+      : `Reste à atteindre ${entry.repMax} ${rangeUnit} sur toutes les séries.`;
 
   return { action: "hold", reason, nextWeights: currentWeights, lastWeights };
 }
@@ -130,11 +156,15 @@ export function openingWeights(exercise: ExerciseTemplate, factor: number): numb
  * Writes a finished session back into the programs.
  *
  * Matching is by `exerciseId`, never by position, so a program edited during
- * the session cannot shift a log onto the wrong movement.
+ * the session cannot shift a log onto the wrong movement. A movement replaced
+ * for this session only is left untouched.
  */
 export function applySessionToPrograms(programs: Program[], session: Session): Program[] {
   const decisions = new Map<string, ProgressionDecision>();
   for (const entry of session.exercises) {
+    // Charges soulevées sur une autre machine : elles ne disent rien de celle
+    // du programme, qui garde ses cibles telles quelles.
+    if (entry.replacedBy !== null) continue;
     decisions.set(entry.exerciseId, decideProgression(entry));
   }
 

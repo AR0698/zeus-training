@@ -29,6 +29,7 @@ function makeEntry(overrides: Partial<SessionExercise> = {}): SessionExercise {
     effort: null,
     status: "done",
     replacedBy: null,
+    note: "",
     sets: [
       { weight: 30, reps: 15, done: true, pr: false },
       { weight: 35, reps: 15, done: true, pr: false },

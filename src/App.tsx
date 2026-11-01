@@ -20,6 +20,7 @@ import { downloadBackup } from "./storage/backup.ts";
 import { useHaptics } from "./hooks/useHaptics.ts";
 import { useNow } from "./hooks/useNow.ts";
 import { useRestTimer } from "./hooks/useRestTimer.ts";
+import { useRestCues, useSounds } from "./hooks/useSounds.ts";
 import { useTheme } from "./hooks/useTheme.ts";
 import { useWakeLock } from "./hooks/useWakeLock.ts";
 import { useStore } from "./state/store.tsx";
@@ -71,6 +72,7 @@ export function App() {
 
   const { toast, show, dismiss } = useToaster();
   const haptics = useHaptics(state.settings.vibration);
+  const sounds = useSounds(state.settings.sounds);
   // One clock for the whole app: to the second during a session, to the minute
   // otherwise. No screen ever calls Date.now() while rendering.
   const now = useNow(true, state.session === null ? 60_000 : 1000);
@@ -84,6 +86,7 @@ export function App() {
       show({ message: "Repos terminé — série suivante", tone: "success" });
     }, [haptics, show]),
   );
+  useRestCues(rest.remaining, sounds);
 
   const notify = useCallback(
     (message: string, tone: ToastTone = "neutral") => show({ message, tone }),
@@ -138,6 +141,21 @@ export function App() {
     [dispatch, haptics, rest],
   );
 
+  // Reprendre une séance abandonnée est un choix explicite : la feuille
+  // « séance oubliée » ne doit pas la reposer aussitôt, même si elle date.
+  const restoreAbandoned = useCallback(() => {
+    dispatch({ type: "session/restoreAbandoned" });
+    haptics.confirm();
+    setStaleDismissed(true);
+    setSessionHidden(false);
+    setTab("today");
+  }, [dispatch, haptics]);
+
+  const discardAbandoned = useCallback(() => {
+    dispatch({ type: "session/discardAbandoned" });
+    show({ message: "Séance abandonnée oubliée", action: { label: "Annuler", run: undo } });
+  }, [dispatch, show, undo]);
+
   const handlers = useMemo<SessionHandlers>(
     () => ({
       adjust: (exerciseId, setIndex, field, delta) =>
@@ -161,6 +179,7 @@ export function App() {
         dispatch({ type: "session/setEffort", exerciseId, effort });
         haptics.tap();
       },
+      setNote: (exerciseId, note) => dispatch({ type: "session/setNote", exerciseId, note }),
       skip: (entry) => {
         dispatch({ type: "session/skip", exerciseId: entry.exerciseId });
         show({
@@ -206,9 +225,18 @@ export function App() {
     dispatch({ type: "session/finish", now: Date.now() });
     rest.stop();
 
+    // L'annulation vaut pour les trois issues. Elle ne tenait qu'à la plus
+    // banale, alors qu'un enregistrement par mégarde coûte le plus cher
+    // précisément quand la séance a produit un record ou une hausse.
+    const cancel = { label: "Annuler", run: undo };
+
     if (prs.length > 0) {
       haptics.celebrate();
-      show({ message: `Record battu : ${prs.map((entry) => entry.shortName).join(", ")}`, tone: "success" });
+      show({
+        message: `Record battu : ${prs.map((entry) => entry.shortName).join(", ")}`,
+        tone: "success",
+        action: cancel,
+      });
     } else if (increases.length > 0) {
       haptics.confirm();
       const first = increases[0];
@@ -217,10 +245,11 @@ export function App() {
           ? `Séance enregistrée — ${first.entry.shortName} passe à ${formatLoad(first.decision.nextWeights.at(-1) ?? 0, first.entry.unit)}`
           : "Séance enregistrée",
         tone: "success",
+        action: cancel,
       });
     } else {
       haptics.confirm();
-      show({ message: "Séance enregistrée", tone: "success", action: { label: "Annuler", run: undo } });
+      show({ message: "Séance enregistrée", tone: "success", action: cancel });
     }
     setTab("today");
   }
@@ -325,6 +354,7 @@ export function App() {
       <>
         <SessionScreen
           session={state.session}
+          history={state.history}
           settings={state.settings}
           now={now}
           rest={rest}
@@ -333,11 +363,31 @@ export function App() {
         <ExerciseSheet detail={detail} onClose={() => setDetail(null)} />
         <ReplaceSheet
           entry={replaceTarget}
+          canKeep={
+            replaceTarget !== null &&
+            state.programs.some(
+              (program) =>
+                program.id === state.session?.programId &&
+                program.exercises.some((exercise) => exercise.id === replaceTarget.exerciseId),
+            )
+          }
           onClose={() => setReplaceTarget(null)}
-          onChoose={(alternative) => {
+          onChoose={(alternative, keep) => {
             if (!replaceTarget) return;
-            dispatch({ type: "session/replace", exerciseId: replaceTarget.exerciseId, alternative });
-            show({ message: `${alternative} remplace ${replaceTarget.shortName}` });
+            const { exerciseId, name, shortName } = replaceTarget;
+            if (keep) {
+              dispatch({ type: "session/keepReplacement", exerciseId, alternative });
+              show({
+                message: `${alternative} remplace ${shortName} dans le programme`,
+                action: { label: "Annuler", run: undo },
+              });
+            } else {
+              dispatch({ type: "session/replace", exerciseId, alternative });
+              show({
+                message:
+                  alternative === name ? `Retour à ${shortName}` : `${alternative} remplace ${shortName}`,
+              });
+            }
             setReplaceTarget(null);
           }}
         />
@@ -416,6 +466,8 @@ export function App() {
             onStart={startSession}
             onOpenDetail={setDetail}
             onOpenPrograms={() => setTab("programs")}
+            onRestoreAbandoned={restoreAbandoned}
+            onDiscardAbandoned={discardAbandoned}
           />
         )}
         {!editedProgram && tab === "programs" && (
@@ -433,6 +485,7 @@ export function App() {
             state={state}
             now={now}
             onUpdate={(patch) => dispatch({ type: "settings/update", patch })}
+            onPreviewSound={() => sounds.preview("end")}
             onExport={exportBackup}
             onImport={importState}
             onReset={() => {

@@ -511,6 +511,14 @@
 .alternative-index { font-size: var(--text-xs); color: var(--text-3); }
 .alternative-list strong { font-size: var(--text-base); font-weight: 600; }
 .alternative-list svg { color: var(--accent-text); }
+/* Un nom de machine tapé à la main peut être long : le bouton passe à la ligne
+   plutôt que de déborder de la feuille à 375 px. */
+.button-wrap {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  padding-block: var(--space-2);
+}
 
 /* --- Stepper -------------------------------------------------------------- */
 
@@ -519,6 +527,11 @@
   /* minmax(0, 1fr) on the value: the ± targets keep their size and the number
      shrinks, instead of the whole control overflowing its column. */
   grid-template-columns: 2.75rem minmax(0, 1fr) 2.75rem;
+  /* Deux cibles de 44 px plus un nombre lisible : en dessous de 132 px, la
+     valeur passe sous le seuil tactile et `overflow: hidden` finit par lui
+     couper un chiffre. Le contrôle se replace (voir `.set-cell`) plutôt que
+     de descendre ici. */
+  min-width: 8.25rem;
   align-items: stretch;
   /* La bordure est comprise dans la hauteur : sans les 2 px, les boutons
      internes tombaient à 42 px. */
@@ -542,7 +555,11 @@
 
 .stepper-value {
   display: flex;
+  /* baseline garde l'unité alignée sur le chiffre ; wrap + align-content
+     recentre la ligne, qui sinon colle en haut du bouton. */
+  flex-wrap: wrap;
   align-items: baseline;
+  align-content: center;
   justify-content: center;
   gap: 2px;
   padding: 0 var(--space-1);
@@ -721,7 +738,7 @@
   position: fixed;
   z-index: var(--z-toast);
   left: 50%;
-  bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--space-4));
+  bottom: calc(var(--bottom-chrome) + var(--space-4));
   transform: translateX(-50%);
   width: min(30rem, calc(100% - var(--space-6)));
   pointer-events: none;

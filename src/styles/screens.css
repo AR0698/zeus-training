@@ -533,6 +533,15 @@
 }
 .record-chip { color: var(--warn-text); background: var(--surface-2); border-color: var(--line); }
 
+/* Les notes s'écrivent en entier : tronquer « douleur épaule… » perdrait l'essentiel. */
+.history-list .history-note {
+  white-space: normal;
+  color: var(--text-2);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+.history-note b { font-weight: 600; color: var(--text); }
+
 .history-list time { width: 3.5rem; flex: 0 0 auto; font-size: var(--text-xs); color: var(--text-3); }
 .history-score { flex: 0 0 auto; font-size: var(--text-xs); color: var(--text-2); font-weight: 600; }
 
@@ -680,7 +689,7 @@
   max-width: var(--page-max);
   margin: 0 auto;
   padding: var(--space-4) max(var(--space-3), var(--safe-left))
-    calc(9rem + var(--safe-bottom)) max(var(--space-3), var(--safe-right));
+    calc(var(--bottom-chrome) + var(--space-6)) max(var(--space-3), var(--safe-right));
 }
 
 .exercise-card {
@@ -733,6 +742,25 @@
 
 .set-table { margin-top: var(--space-4); }
 
+/* --- Note par exercice ---------------------------------------------------- */
+
+.exercise-note-recall {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--accent-text);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+.exercise-note-recall svg { flex: 0 0 auto; margin-top: 0.1em; }
+
+.exercise-note { margin-top: var(--space-4); }
+.exercise-note-toggle { display: inline-flex; align-items: center; gap: var(--space-2); }
+.exercise-note-label { font-size: var(--text-xs); color: var(--text-2); }
+.exercise-note-input { min-height: 3.5rem; resize: none; }
+
 /* Narrow phones get two rows per set, so every control keeps a full 44 px
    target and the validate button spans both rows — the easiest thing to hit
    with a thumb, which is the whole point of this screen. */
@@ -754,9 +782,25 @@
 .set-cell-weight { grid-area: weight; }
 .set-cell-reps { grid-area: reps; }
 .set-row .validate-button { grid-area: validate; height: 100%; }
+/* Chronométré : la durée seule, donc une seule ligne par série. */
+.set-table.is-timed .set-row { grid-template-areas: "index weight validate"; }
+.set-table.is-timed .set-index { align-self: center; padding-top: 0; }
+.set-table.is-timed .validate-button { height: 3rem; }
 
-.set-cell { display: grid; grid-template-columns: 3.5rem 1fr; align-items: center; gap: var(--space-2); }
+/* Le libellé et le pas-à-pas tiennent sur une ligne tant que le second garde
+   ses 132 px — deux cibles de 44 px plus la valeur. En dessous (un 320 px, ou
+   n'importe quel écran en zoom d'affichage), le pas-à-pas passe à la ligne et
+   récupère toute la largeur au lieu d'être comprimé jusqu'à rogner les
+   chiffres : la colonne de valeur tombait à 4 px et « 12 » se lisait « 1 ». */
+.set-cell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+.set-cell .stepper { flex: 1 1 8.25rem; }
 .set-cell-label {
+  flex: 0 0 3.5rem;
   font-size: var(--text-3xs);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -784,7 +828,10 @@
   border-radius: var(--radius-sm);
   border: 2px solid var(--line-strong);
   background: var(--surface-2);
-  color: transparent;
+  /* Le geste principal de l'écran ne peut pas être une case vide : la coche
+     se montre en sourdine, et c'est le passage au fond d'accent qui dit
+     « validée », pas l'apparition du signe. */
+  color: var(--text-3);
   transition:
     background var(--dur) var(--ease-out),
     border-color var(--dur) var(--ease-out),
@@ -917,8 +964,11 @@
     grid-template-areas: "index weight reps validate";
     gap: var(--space-3);
   }
+  .set-table.is-timed .set-row { grid-template-areas: "index weight weight validate"; }
+  .set-table.is-timed .set-head span:nth-child(2) { grid-column: span 2; }
   .set-index { align-self: center; padding-top: 0; }
-  .set-cell { grid-template-columns: 1fr; }
+  /* Le libellé disparaît : l'en-tête de colonne le remplace, et le pas-à-pas
+     occupe seul la ligne. */
   .set-cell-label { display: none; }
   .set-row .validate-button { height: 3rem; }
 }
@@ -928,7 +978,6 @@
   .progress-columns { grid-template-columns: 1fr 1fr; }
   .hero-card { padding: var(--space-8); }
   .exercise-card { padding: var(--space-6); }
-  .session-body { padding-bottom: calc(8rem + var(--safe-bottom)); }
 }
 
 @media (min-width: 76rem) {
@@ -948,3 +997,9 @@
   .session-identity h1 { font-size: var(--text-md); }
   .session-timer strong { font-size: var(--text-lg); }
 }
+
+/* Séance abandonnée, reprenable depuis l'accueil */
+.abandoned-card { align-items: flex-start; }
+.abandoned-body { display: grid; gap: var(--space-3); min-width: 0; }
+.abandoned-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.abandoned-actions .button { flex: 1 1 auto; }

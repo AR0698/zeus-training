@@ -6,6 +6,7 @@ import { pickAndReadBackup } from "../../storage/backup.ts";
 import { requestPersistentStorage, storageKind } from "../../storage/db.ts";
 import { Segmented } from "../components/Segmented.tsx";
 import { Sheet } from "../components/Sheet.tsx";
+import { ToggleRow } from "../components/ToggleRow.tsx";
 import {
   IconAlert,
   IconAuto,
@@ -24,6 +25,7 @@ export function SettingsScreen({
   state,
   now,
   onUpdate,
+  onPreviewSound,
   onExport,
   onImport,
   onReset,
@@ -32,6 +34,8 @@ export function SettingsScreen({
   state: AppState;
   now: number;
   onUpdate: (patch: Partial<Settings>) => void;
+  /** Plays the end-of-rest beep, so turning sounds on is heard straight away. */
+  onPreviewSound: () => void;
   onExport: () => void;
   onImport: (next: AppState, issues: string[]) => void;
   onReset: () => void;
@@ -140,6 +144,16 @@ export function SettingsScreen({
           help="Confirmation courte à chaque série validée et à la fin du repos."
           checked={state.settings.vibration}
           onChange={(vibration) => onUpdate({ vibration })}
+        />
+
+        <ToggleRow
+          label="Sons"
+          help="Bip à 3, 2, 1 puis à la fin du repos. Sur iPhone, coupés par le mode silencieux."
+          checked={state.settings.sounds}
+          onChange={(sounds) => {
+            onUpdate({ sounds });
+            if (sounds) onPreviewSound();
+          }}
         />
 
         <ToggleRow
@@ -297,34 +311,4 @@ function storageLabel(): string {
     default:
       return "Mémoire seule — non conservé";
   }
-}
-
-function ToggleRow({
-  label,
-  help,
-  checked,
-  onChange,
-}: {
-  label: string;
-  help: string;
-  checked: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <label className="toggle-row">
-      <span>
-        <span className="field-label">{label}</span>
-        <span className="field-help">{help}</span>
-      </span>
-      <input
-        type="checkbox"
-        role="switch"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-      />
-      <span className="toggle-track" aria-hidden="true">
-        <span className="toggle-thumb" />
-      </span>
-    </label>
-  );
 }

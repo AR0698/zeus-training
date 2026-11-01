@@ -36,15 +36,20 @@ export type Action =
     }
   | { type: "session/start"; program: Program; now: number; id: string }
   | { type: "session/abandon" }
+  | { type: "session/restoreAbandoned" }
+  | { type: "session/discardAbandoned" }
   | { type: "session/finish"; now: number }
   | { type: "session/focus"; exerciseId: string }
   | { type: "session/setValue"; exerciseId: string; setIndex: number; field: "weight" | "reps"; value: number }
   | { type: "session/adjust"; exerciseId: string; setIndex: number; field: "weight" | "reps"; delta: number }
   | { type: "session/toggleSet"; exerciseId: string; setIndex: number; now: number }
   | { type: "session/setEffort"; exerciseId: string; effort: Effort }
+  | { type: "session/setNote"; exerciseId: string; note: string }
   | { type: "session/skip"; exerciseId: string }
   | { type: "session/resume"; exerciseId: string }
   | { type: "session/replace"; exerciseId: string; alternative: string }
+  /** Le remplaçant devient l'exercice du programme, dès la prochaine séance. */
+  | { type: "session/keepReplacement"; exerciseId: string; alternative: string }
   | { type: "session/addSet"; exerciseId: string }
   | { type: "session/removeSet"; exerciseId: string };
 
@@ -53,9 +58,11 @@ export const UNDOABLE: ReadonlySet<Action["type"]> = new Set([
   "session/skip",
   "session/finish",
   "session/abandon",
+  "session/discardAbandoned",
   "session/removeSet",
   "state/reset",
   "state/replace",
   "program/delete",
   "program/removeExercise",
+  "session/keepReplacement",
 ]);

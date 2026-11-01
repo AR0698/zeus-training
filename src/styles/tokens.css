@@ -66,6 +66,12 @@
   --tap-min: 2.75rem;   /* 44px — never go below this for a control */
   --tap-comfort: 3.25rem;
   --nav-height: 4.25rem;
+
+  /* Hauteur du bandeau fixe du bas. Par défaut la barre d'onglets ; en séance,
+     `useBottomChrome` y publie la hauteur mesurée du pied, qui grandit quand
+     le minuteur de repos apparaît. Tout ce qui doit passer au-dessus ou
+     défiler au-delà s'y réfère, plutôt que de redéclarer une constante. */
+  --bottom-chrome: calc(var(--nav-height) + var(--safe-bottom));
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);

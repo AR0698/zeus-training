@@ -7,8 +7,10 @@ import {
   unitLabel,
 } from "../../domain/format.ts";
 import { weightStep } from "../../domain/progression.ts";
-import { elapsedSeconds, sessionProgress } from "../../domain/session.ts";
-import type { Effort, Session, SessionExercise, Settings } from "../../domain/types.ts";
+import { elapsedSeconds, lastExerciseNote, sessionProgress } from "../../domain/session.ts";
+import type { Effort, HistoryEntry, Session, SessionExercise, Settings } from "../../domain/types.ts";
+import { useBottomChrome } from "../../hooks/useBottomChrome.ts";
+import { ExerciseNoteField, ExerciseNoteRecall } from "../components/ExerciseNoteField.tsx";
 import { RestTimerBar } from "../components/RestTimer.tsx";
 import { Sheet } from "../components/Sheet.tsx";
 import { Stepper } from "../components/Stepper.tsx";
@@ -36,6 +38,7 @@ export type SessionHandlers = {
   setValue: (exerciseId: string, setIndex: number, field: "weight" | "reps", value: number) => void;
   toggleSet: (entry: SessionExercise, setIndex: number) => void;
   setEffort: (exerciseId: string, effort: Effort) => void;
+  setNote: (exerciseId: string, note: string) => void;
   skip: (entry: SessionExercise) => void;
   resume: (exerciseId: string) => void;
   focus: (exerciseId: string) => void;
@@ -52,12 +55,15 @@ export type SessionHandlers = {
 
 export function SessionScreen({
   session,
+  history,
   settings,
   now,
   rest,
   handlers,
 }: {
   session: Session;
+  /** Newest first — only read to recall the last note of each exercise. */
+  history: readonly HistoryEntry[];
   settings: Settings;
   now: number;
   rest: { remaining: number | null; total: number; add: (s: number) => void; stop: () => void };
@@ -68,8 +74,11 @@ export function SessionScreen({
   const elapsed = elapsedSeconds(session, now);
   const current = session.exercises[session.currentIndex] ?? session.exercises[0];
   const cardRef = useRef<HTMLElement>(null);
+  const footerRef = useRef<HTMLElement>(null);
   const previousId = useRef<string | null>(null);
   const currentId = current?.exerciseId;
+
+  useBottomChrome(footerRef);
 
   // Switching exercise brings the card into view. The first render is skipped
   // on purpose: scrolling the page the instant a session opens would hide the
@@ -78,7 +87,12 @@ export function SessionScreen({
     if (!currentId) return;
     const changed = previousId.current !== null && previousId.current !== currentId;
     previousId.current = currentId;
-    if (changed) cardRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    if (!changed) return;
+    // `scroll-behavior: auto` in the reduced-motion block cannot win against an
+    // explicit `behavior` here — the option always takes precedence over the
+    // stylesheet, so the preference has to be read rather than declared.
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    cardRef.current?.scrollIntoView({ block: "nearest", behavior: still ? "auto" : "smooth" });
   }, [currentId]);
 
   if (!current) return null;
@@ -139,11 +153,20 @@ export function SessionScreen({
       </header>
 
       <div className="session-body">
-        <ExerciseCard ref={cardRef} entry={current} index={session.currentIndex} total={session.exercises.length} settings={settings} handlers={handlers} />
+        <ExerciseCard
+          ref={cardRef}
+          entry={current}
+          index={session.currentIndex}
+          total={session.exercises.length}
+          previousNote={lastExerciseNote(history, current.exerciseId)}
+          now={now}
+          settings={settings}
+          handlers={handlers}
+        />
 
         {session.exercises.some((entry) => entry.status === "pending" && entry !== current) && (
           <section className="up-next">
-            <span className="kicker">À suivre</span>
+            <h2 className="kicker">À suivre</h2>
             <ul>
               {session.exercises
                 .filter((entry) => entry.status === "pending" && entry.exerciseId !== current.exerciseId)
@@ -165,7 +188,7 @@ export function SessionScreen({
 
         {session.exercises.some((entry) => entry.status === "skipped") && (
           <section className="up-next up-next-skipped">
-            <span className="kicker">Passés</span>
+            <h2 className="kicker">Passés</h2>
             <ul>
               {session.exercises
                 .filter((entry) => entry.status === "skipped")
@@ -183,7 +206,7 @@ export function SessionScreen({
         )}
       </div>
 
-      <footer className="session-footer">
+      <footer className="session-footer" ref={footerRef}>
         {rest.remaining !== null && (
           <RestTimerBar
             remaining={rest.remaining}
@@ -257,6 +280,8 @@ function ExerciseCard({
   entry,
   index,
   total,
+  previousNote,
+  now,
   settings,
   handlers,
 }: {
@@ -264,10 +289,13 @@ function ExerciseCard({
   entry: SessionExercise;
   index: number;
   total: number;
+  previousNote: { note: string; date: number } | null;
+  now: number;
   settings: Settings;
   handlers: SessionHandlers;
 }) {
   const allSetsDone = entry.sets.every((set) => set.done);
+  const timed = entry.unit === "sec";
   const restSeconds = entry.restSeconds > 0 ? entry.restSeconds : settings.defaultRestSeconds;
 
   return (
@@ -280,6 +308,7 @@ function ExerciseCard({
           <h2 id={`exercise-${entry.exerciseId}`}>{entry.replacedBy ?? entry.name}</h2>
           {entry.replacedBy && <span className="swap-note">remplace {entry.name}</span>}
           <p className="exercise-cue">{entry.cue}</p>
+          {previousNote && <ExerciseNoteRecall previous={previousNote} now={now} />}
         </div>
         {/* Le mot compte autant que l'icône : c'est la seule porte vers le
             dessin du mouvement, et un (i) seul ne dit pas ce qu'il y a
@@ -297,11 +326,13 @@ function ExerciseCard({
         </button>
       </header>
 
-      <div className="set-table" role="group" aria-label="Séries">
+      {/* Un exercice chronométré ne se compte qu'en secondes : pas de colonne
+          reps, sinon la cible en secondes s'y retrouvait en « Tours 45 ». */}
+      <div className={`set-table ${timed ? "is-timed" : ""}`} role="group" aria-label="Séries">
         <div className="set-head">
           <span>Série</span>
-          <span>{entry.unit === "sec" ? "Durée" : "Charge"}</span>
-          <span>{entry.unit === "sec" ? "Tours" : "Reps"}</span>
+          <span>{timed ? "Durée" : "Charge"}</span>
+          {!timed && <span>Reps</span>}
           <span className="visually-hidden">Validation</span>
         </div>
 
@@ -310,35 +341,41 @@ function ExerciseCard({
             <span className="set-index tabular">
               {setIndex + 1}
               {set.pr && (
-                <span className="pr-flag" title="Record personnel">
+                // Toutes les icônes sont `aria-hidden`, et un `title` ne se
+                // montre pas au doigt : sans ce mot, le record n'existe que
+                // pour qui voit la coupe.
+                <span className="pr-flag">
                   <IconTrophy size={11} />
+                  <span className="visually-hidden">Record personnel</span>
                 </span>
               )}
             </span>
 
             <div className="set-cell set-cell-weight">
-              <span className="set-cell-label">{entry.unit === "sec" ? "Durée" : "Charge"}</span>
+              <span className="set-cell-label">{timed ? "Durée" : "Charge"}</span>
               <Stepper
                 value={set.weight}
                 unit={unitLabel(entry.unit)}
                 step={weightStep(entry.unit, entry.group, set.weight)}
-                label={`Série ${setIndex + 1} ${entry.unit === "sec" ? "durée" : "charge"}`}
+                label={`Série ${setIndex + 1} ${timed ? "durée" : "charge"}`}
                 onAdjust={(delta) => handlers.adjust(entry.exerciseId, setIndex, "weight", delta)}
                 onSet={(value) => handlers.setValue(entry.exerciseId, setIndex, "weight", value)}
               />
             </div>
 
-            <div className="set-cell set-cell-reps">
-              <span className="set-cell-label">{entry.unit === "sec" ? "Tours" : "Reps"}</span>
-              <Stepper
-                value={set.reps}
-                unit=""
-                step={1}
-                label={`Série ${setIndex + 1} répétitions`}
-                onAdjust={(delta) => handlers.adjust(entry.exerciseId, setIndex, "reps", delta)}
-                onSet={(value) => handlers.setValue(entry.exerciseId, setIndex, "reps", value)}
-              />
-            </div>
+            {!timed && (
+              <div className="set-cell set-cell-reps">
+                <span className="set-cell-label">Reps</span>
+                <Stepper
+                  value={set.reps}
+                  unit=""
+                  step={1}
+                  label={`Série ${setIndex + 1} répétitions`}
+                  onAdjust={(delta) => handlers.adjust(entry.exerciseId, setIndex, "reps", delta)}
+                  onSet={(value) => handlers.setValue(entry.exerciseId, setIndex, "reps", value)}
+                />
+              </div>
+            )}
 
             <button
               type="button"
@@ -355,7 +392,7 @@ function ExerciseCard({
         <div className="set-tools">
           <span className="set-range">
             Cible {formatRepRange(entry.repMin, entry.repMax)}{" "}
-            {entry.unit === "sec" ? "s" : "reps"}
+            {timed ? "s" : "reps"}
           </span>
           <div>
             <button type="button" className="mini-button" onClick={() => handlers.removeSet(entry.exerciseId)}>
@@ -367,6 +404,14 @@ function ExerciseCard({
           </div>
         </div>
       </div>
+
+      {/* La zone vit dès le montage de la carte : un `role="status"` inséré en
+          même temps que son texte n'est pas annoncé de façon fiable. */}
+      <p className="visually-hidden" role="status">
+        {allSetsDone
+          ? `${entry.replacedBy ?? entry.name} terminé. Indique la difficulté ressentie.`
+          : ""}
+      </p>
 
       {allSetsDone && (
         <div className="effort-block">
@@ -387,6 +432,14 @@ function ExerciseCard({
           </div>
         </div>
       )}
+
+      <ExerciseNoteField
+        key={entry.exerciseId}
+        exerciseId={entry.exerciseId}
+        note={entry.note}
+        hasPrevious={previousNote !== null}
+        onChange={(note) => handlers.setNote(entry.exerciseId, note)}
+      />
 
       <div className="exercise-actions">
         <button type="button" className="button button-quiet" onClick={() => handlers.replace(entry)}>

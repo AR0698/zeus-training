@@ -1,4 +1,5 @@
 import { catalogTemplate } from "../domain/catalog/index.ts";
+import { NOTE_MAX_LENGTH, cleanNote } from "../domain/session.ts";
 import {
   CURRENT_VERSION,
   DEFAULT_SETTINGS,
@@ -8,6 +9,7 @@ import {
 import type {
   AppState,
   Effort,
+  ExerciseNote,
   ExerciseTemplate,
   HistoryEntry,
   MuscleGroup,
@@ -197,10 +199,17 @@ function parseSessionExercise(raw: unknown): SessionExercise | null {
     effort: typeof raw.effort === "string" ? oneOf(raw.effort, EFFORTS, "good") : null,
     status: oneOf(raw.status, STATUSES, "pending"),
     replacedBy: typeof raw.replacedBy === "string" ? raw.replacedBy : null,
+    // Absent before notes existed. Kept untrimmed: the user may still be typing.
+    note: str(raw.note, "").slice(0, NOTE_MAX_LENGTH),
   };
 }
 
-function parseSession(raw: unknown, now: number, issues: Issues): Session | null {
+function parseSession(
+  raw: unknown,
+  now: number,
+  issues: Issues,
+  unreadable = "Séance en cours illisible — elle a été écartée.",
+): Session | null {
   if (!isObject(raw)) return null;
   const rawExercises = Array.isArray(raw.exercises) ? raw.exercises : [];
   const exercises = rawExercises
@@ -208,7 +217,7 @@ function parseSession(raw: unknown, now: number, issues: Issues): Session | null
     .filter((entry): entry is SessionExercise => entry !== null);
 
   if (exercises.length === 0) {
-    issues.push("Séance en cours illisible — elle a été écartée.");
+    issues.push(unreadable);
     return null;
   }
 
@@ -221,6 +230,20 @@ function parseSession(raw: unknown, now: number, issues: Issues): Session | null
     currentIndex: Math.min(Math.max(0, Math.round(num(raw.currentIndex, 0))), exercises.length - 1),
     exercises,
   };
+}
+
+/** Absent from entries saved before notes existed — they simply have none. */
+function parseExerciseNotes(raw: unknown): ExerciseNote[] {
+  if (!Array.isArray(raw)) return [];
+  const notes: ExerciseNote[] = [];
+  for (const item of raw) {
+    if (!isObject(item)) continue;
+    const exerciseId = str(item.exerciseId, "");
+    const note = cleanNote(str(item.note, ""));
+    if (!exerciseId || !note) continue;
+    notes.push({ exerciseId, name: str(item.name, exerciseId), note });
+  }
+  return notes;
 }
 
 function parseHistory(raw: unknown): HistoryEntry[] {
@@ -242,6 +265,7 @@ function parseHistory(raw: unknown): HistoryEntry[] {
       completedSets: Math.max(0, Math.round(num(item.completedSets, 0))),
       volume: Math.max(0, Math.round(num(item.volume, 0))),
       note: str(item.note, ""),
+      exerciseNotes: parseExerciseNotes(item.exerciseNotes),
       personalRecords: Array.isArray(item.personalRecords)
         ? item.personalRecords.filter((value): value is string => typeof value === "string")
         : [],
@@ -271,6 +295,8 @@ function parseSettings(raw: unknown): Settings {
     autoRest: bool(raw.autoRest, DEFAULT_SETTINGS.autoRest),
     defaultRestSeconds: Math.min(600, Math.max(15, Math.round(num(raw.defaultRestSeconds, DEFAULT_SETTINGS.defaultRestSeconds)))),
     vibration: bool(raw.vibration, DEFAULT_SETTINGS.vibration),
+    // Absent des sauvegardes d'avant les sons : elles restent silencieuses.
+    sounds: bool(raw.sounds, DEFAULT_SETTINGS.sounds),
     keepAwake: bool(raw.keepAwake, DEFAULT_SETTINGS.keepAwake),
     displayName: str(raw.displayName, DEFAULT_SETTINGS.displayName).slice(0, 40),
   };
@@ -364,6 +390,13 @@ export function parseAppState(raw: unknown, now: number): ParseResult {
     backupPromptedAt: time(source.backupPromptedAt),
     programs,
     session: parseSession(source.session, now, issues),
+    // Migration v2 → v3 : le champ n'existait pas, l'absence vaut « rien à reprendre ».
+    abandonedSession: parseSession(
+      source.abandonedSession,
+      now,
+      issues,
+      "Séance abandonnée illisible — elle ne pourra pas être reprise.",
+    ),
     history,
     records: parseRecords(source.records),
     lastCompletedProgramId:

@@ -130,6 +130,14 @@ export function makeEmptyProgram(id: string, accent: Program["accent"]): Program
   };
 }
 
+/** Bornes et raccourcis de la durée estimée d'une séance, en minutes. */
+export const SESSION_MINUTES = {
+  min: 5,
+  max: 240,
+  step: 5,
+  presets: [45, 60, 90, 120],
+} as const;
+
 export const ACCENTS: Program["accent"][] = ["acid", "orange", "sky", "violet"];
 
 export const ACCENT_LABELS: Record<Program["accent"], string> = {
