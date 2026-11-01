@@ -52,7 +52,8 @@ test("les séries, charges et fourchettes de chaque exercice sont cohérentes", 
             assert.ok(seconds >= exercise.repMin && seconds <= exercise.repMax, where);
           }
         } else {
-          // Poids du corps : on part de zéro kilo, jamais d'une charge inventée.
+          // Poids du corps : aucune charge, donc aucun kilo à afficher ni à régler.
+          assert.equal(exercise.unit, "reps", `${where} : devrait compter des répétitions`);
           assert.deepEqual(exercise.targetWeights, exercise.targetWeights.map(() => 0), where);
         }
       }

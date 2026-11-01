@@ -84,7 +84,10 @@ function fitWeights(start: number[], sets: number, unit: Unit): number[] {
 }
 
 export function entry(input: CatalogInput): CatalogEntry {
-  const unit = input.unit ?? "kg";
+  // Le corps seul (ou un élastique, dont la « charge » est sa couleur) ne se
+  // pèse pas : ces fiches comptent des répétitions, sans kilos à régler.
+  const bodyOnly = input.equipment === "poids-du-corps" || input.equipment === "elastique";
+  const unit = input.unit ?? (bodyOnly && input.start.every((value) => value === 0) ? "reps" : "kg");
   const targetWeights = fitWeights(input.start, input.sets, unit);
 
   const template: ExerciseTemplate = {

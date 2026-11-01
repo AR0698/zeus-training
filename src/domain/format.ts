@@ -72,10 +72,12 @@ export function formatNumber(value: number): string {
 }
 
 export function formatLoad(value: number, unit: Unit): string {
+  if (unit === "reps") return "poids du corps";
   return unit === "sec" ? `${formatNumber(value)} s` : `${formatNumber(value)} kg`;
 }
 
 export function unitLabel(unit: Unit): string {
+  if (unit === "reps") return "";
   return unit === "sec" ? "s" : "kg";
 }
 

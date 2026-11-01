@@ -175,8 +175,10 @@ export function SessionScreen({
                     <button type="button" onClick={() => handlers.focus(entry.exerciseId)}>
                       <span className="up-next-name">{entry.replacedBy ?? entry.shortName}</span>
                       <span className="up-next-target tabular">
-                        {entry.sets.length} × {formatRepRange(entry.repMin, entry.repMax)} ·{" "}
-                        {formatLoad(entry.sets.at(-1)?.weight ?? 0, entry.unit)}
+                        {entry.sets.length} × {formatRepRange(entry.repMin, entry.repMax)}
+                        {entry.unit !== "reps" && (
+                          <> · {formatLoad(entry.sets.at(-1)?.weight ?? 0, entry.unit)}</>
+                        )}
                       </span>
                       <IconChevronRight size={16} />
                     </button>
@@ -296,6 +298,8 @@ function ExerciseCard({
 }) {
   const allSetsDone = entry.sets.every((set) => set.done);
   const timed = entry.unit === "sec";
+  // Poids du corps : pas de colonne de charge, seules les répétitions comptent.
+  const bodyweight = entry.unit === "reps";
   const restSeconds = entry.restSeconds > 0 ? entry.restSeconds : settings.defaultRestSeconds;
 
   return (
@@ -328,10 +332,10 @@ function ExerciseCard({
 
       {/* Un exercice chronométré ne se compte qu'en secondes : pas de colonne
           reps, sinon la cible en secondes s'y retrouvait en « Tours 45 ». */}
-      <div className={`set-table ${timed ? "is-timed" : ""}`} role="group" aria-label="Séries">
+      <div className={`set-table ${timed ? "is-timed" : ""} ${bodyweight ? "is-bodyweight" : ""}`} role="group" aria-label="Séries">
         <div className="set-head">
           <span>Série</span>
-          <span>{timed ? "Durée" : "Charge"}</span>
+          {!bodyweight && <span>{timed ? "Durée" : "Charge"}</span>}
           {!timed && <span>Reps</span>}
           <span className="visually-hidden">Validation</span>
         </div>
@@ -351,17 +355,19 @@ function ExerciseCard({
               )}
             </span>
 
-            <div className="set-cell set-cell-weight">
-              <span className="set-cell-label">{timed ? "Durée" : "Charge"}</span>
-              <Stepper
-                value={set.weight}
-                unit={unitLabel(entry.unit)}
-                step={weightStep(entry.unit, entry.group, set.weight)}
-                label={`Série ${setIndex + 1} ${timed ? "durée" : "charge"}`}
-                onAdjust={(delta) => handlers.adjust(entry.exerciseId, setIndex, "weight", delta)}
-                onSet={(value) => handlers.setValue(entry.exerciseId, setIndex, "weight", value)}
-              />
-            </div>
+            {!bodyweight && (
+              <div className="set-cell set-cell-weight">
+                <span className="set-cell-label">{timed ? "Durée" : "Charge"}</span>
+                <Stepper
+                  value={set.weight}
+                  unit={unitLabel(entry.unit)}
+                  step={weightStep(entry.unit, entry.group, set.weight)}
+                  label={`Série ${setIndex + 1} ${timed ? "durée" : "charge"}`}
+                  onAdjust={(delta) => handlers.adjust(entry.exerciseId, setIndex, "weight", delta)}
+                  onSet={(value) => handlers.setValue(entry.exerciseId, setIndex, "weight", value)}
+                />
+              </div>
+            )}
 
             {!timed && (
               <div className="set-cell set-cell-reps">

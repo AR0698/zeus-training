@@ -232,8 +232,9 @@ export function ProgramEditorScreen({
                       <strong>{exercise.name}</strong>
                       <span className="tabular">
                         {exercise.sets} × {formatRepRange(exercise.repMin, exercise.repMax)}
-                        {exercise.unit === "sec" ? " s" : ""} ·{" "}
-                        {exercise.targetWeights.join(" · ")} {unitLabel(exercise.unit)}
+                        {exercise.unit === "sec" ? " s" : ""}
+                        {exercise.unit !== "reps" &&
+                          ` · ${exercise.targetWeights.join(" · ")} ${unitLabel(exercise.unit)}`}
                       </span>
                     </button>
 
