@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  DELOAD_FACTOR,
   applySessionToPrograms,
   decideProgression,
   layoffAdjustment,
@@ -45,10 +44,11 @@ test("weightStep uses gym-realistic increments", () => {
   assert.equal(weightStep("sec", "core", 45), 5);
 });
 
-test("increases only when every set hits the top of the range", () => {
+test("au haut de la fourchette, la charge reste celle de la séance : chaque machine se règle à part", () => {
   const decision = decideProgression(makeEntry());
-  assert.equal(decision.action, "increase");
-  assert.deepEqual(decision.nextWeights, [32.5, 37.5]);
+  assert.equal(decision.action, "hold");
+  assert.deepEqual(decision.nextWeights, [30, 35]);
+  assert.match(decision.reason, /monte/);
 });
 
 test("holds when a set stops short of the top of the range", () => {
@@ -80,12 +80,12 @@ test("holds when sets are left unvalidated", () => {
   assert.equal(decision.action, "hold");
 });
 
-test("deloads when a completed set falls below the range", () => {
+test("sous la fourchette, la charge n'est pas allégée d'office", () => {
   const decision = decideProgression(
     makeEntry({ sets: [{ weight: 40, reps: 8, done: true, pr: false }] }),
   );
-  assert.equal(decision.action, "deload");
-  assert.deepEqual(decision.nextWeights, [40 * DELOAD_FACTOR]);
+  assert.equal(decision.action, "hold");
+  assert.deepEqual(decision.nextWeights, [40]);
 });
 
 test("a skipped exercise never changes its target", () => {
@@ -94,16 +94,14 @@ test("a skipped exercise never changes its target", () => {
   assert.deepEqual(decision.nextWeights, [30, 35]);
 });
 
-test("a long layoff lightens the opening loads", () => {
+test("a long layoff is detected, without touching the loads", () => {
   const now = Date.UTC(2026, 7, 10);
   const recent = layoffAdjustment(now - 5 * 86_400_000, now);
   assert.equal(recent.applied, false);
-  assert.equal(recent.factor, 1);
 
   const long = layoffAdjustment(now - 40 * 86_400_000, now);
   assert.equal(long.applied, true);
   assert.equal(long.days, 40);
-  assert.equal(long.factor, 0.9);
 });
 
 test("progression is written back by exercise id, not by position", () => {
@@ -115,13 +113,19 @@ test("progression is written back by exercise id, not by position", () => {
     lastSessionDate: null,
   });
 
-  // Every set completed at the top of its range.
+  // Every set completed at the top of its range, on loads set by hand 1 kg above
+  // the target: those are what the next session must reopen with.
   const finished = {
     ...session,
     exercises: session.exercises.map((entry) => ({
       ...entry,
       status: "done" as const,
-      sets: entry.sets.map((set) => ({ ...set, reps: entry.repMax, done: true })),
+      sets: entry.sets.map((set) => ({
+        ...set,
+        weight: entry.unit === "kg" ? set.weight + 1 : set.weight,
+        reps: entry.repMax,
+        done: true,
+      })),
     })),
   };
 
@@ -134,8 +138,13 @@ test("progression is written back by exercise id, not by position", () => {
   const [updated] = applySessionToPrograms([shuffled], finished);
   for (const exercise of updated!.exercises) {
     const original = program.exercises.find((item) => item.id === exercise.id)!;
-    const expected = original.targetWeights.map(
-      (weight) => weight + weightStep(original.unit, original.group, weight),
+    // Les kilos reprennent ceux de la séance ; seules les secondes s'allongent.
+    const expected = original.targetWeights.map((weight) =>
+      original.unit === "kg"
+        ? weight + 1
+        : original.unit === "sec"
+          ? weight + weightStep(original.unit, original.group, weight)
+          : weight,
     );
     assert.deepEqual(exercise.targetWeights, expected, exercise.id);
   }

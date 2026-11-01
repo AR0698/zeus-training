@@ -27,7 +27,7 @@ export function ProgramsScreen({
         <h1 className="display">Ton cycle, à ta façon</h1>
         <p className="lead">
           Les séances tournent en boucle dans l&apos;ordre de cette liste. Ajoute, retire et
-          réordonne les exercices ; les cibles se recalculent seules après chaque séance.
+          réordonne les exercices ; chaque séance repart des charges de la précédente.
         </p>
       </header>
 
