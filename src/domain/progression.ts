@@ -1,7 +1,12 @@
+import { programPlace } from "./place.ts";
 import type { ExerciseTemplate, MuscleGroup, Program, Session, SessionExercise, Unit } from "./types.ts";
 
 /**
- * Double progression, on the cautious side.
+ * Double progression, on the cautious side — and never on the kilos.
+ *
+ * Every machine is set differently, so a load is only ever the one typed in
+ * the last session: the app says when to go up or down, it never moves the
+ * kilos itself. Held seconds still lengthen on their own; they are not a load.
  *
  * Everything here is a pure function of its arguments — no clock, no storage,
  * no React. That is what makes the rules testable and what keeps a UI bug from
@@ -9,8 +14,6 @@ import type { ExerciseTemplate, MuscleGroup, Program, Session, SessionExercise, 
  */
 
 export const LAYOFF_DAYS = 21;
-export const LAYOFF_FACTOR = 0.9;
-export const DELOAD_FACTOR = 0.9;
 
 /**
  * Smallest sensible adjustment for a given load.
@@ -46,7 +49,7 @@ export function openingReps(unit: Unit, repMin: number): number {
   return unit === "sec" ? 0 : repMin;
 }
 
-export type ProgressionAction = "increase" | "hold" | "deload";
+export type ProgressionAction = "increase" | "hold";
 
 export type ProgressionDecision = {
   action: ProgressionAction;
@@ -58,10 +61,10 @@ export type ProgressionDecision = {
 /**
  * Decides the next targets for one exercise from how the session actually went.
  *
- * - increase: every set completed at the top of the rep range, and it did not
- *   feel hard.
- * - deload: at least one completed set fell below the bottom of the range.
- * - hold: everything else, including a skipped or partial exercise.
+ * - increase: timed work only — every set held to the top of the range, and it
+ *   did not feel hard.
+ * - hold: everything else. A load in kilos always comes back as it was lifted;
+ *   the reason says whether to go up or down by hand.
  */
 export function decideProgression(entry: SessionExercise): ProgressionDecision {
   const completed = entry.sets.filter((set) => set.done);
@@ -104,11 +107,9 @@ export function decideProgression(entry: SessionExercise): ProgressionDecision {
   }
   if (belowRange) {
     return {
-      action: "deload",
-      reason: `Série sous ${entry.repMin} reps — charge allégée de 10 % pour retrouver la fourchette.`,
-      nextWeights: currentWeights.map((weight) =>
-        clampLoad(Math.min(weight, weight * DELOAD_FACTOR)),
-      ),
+      action: "hold",
+      reason: `Série sous ${entry.repMin} reps — baisse la charge si tu veux retrouver la fourchette.`,
+      nextWeights: currentWeights,
       lastWeights,
     };
   }
@@ -123,6 +124,15 @@ export function decideProgression(entry: SessionExercise): ProgressionDecision {
     return {
       action: "hold",
       reason: `Toutes les séries à ${entry.repMax} reps — passe à la variante plus difficile.`,
+      nextWeights: currentWeights,
+      lastWeights,
+    };
+  }
+
+  if (allSetsDone && atTopOfRange && !feltHard && !timed) {
+    return {
+      action: "hold",
+      reason: `Toutes les séries à ${entry.repMax} reps — monte la charge si tu te sens prêt.`,
       nextWeights: currentWeights,
       lastWeights,
     };
@@ -157,24 +167,24 @@ export function daysBetween(from: number, to: number): number {
   return Math.max(0, Math.floor((to - from) / 86_400_000));
 }
 
-/** After a long break the first session comes back 10 % lighter. */
+/**
+ * A long break is noticed and announced — the loads stay what they were:
+ * the user lightens them by hand if needed.
+ */
 export function layoffAdjustment(
   lastSessionDate: number | null,
   now: number,
-): { applied: boolean; days: number; factor: number } {
-  if (lastSessionDate === null) return { applied: false, days: 0, factor: 1 };
+): { applied: boolean; days: number } {
+  if (lastSessionDate === null) return { applied: false, days: 0 };
   const days = daysBetween(lastSessionDate, now);
-  const applied = days >= LAYOFF_DAYS;
-  return { applied, days, factor: applied ? LAYOFF_FACTOR : 1 };
+  return { applied: days >= LAYOFF_DAYS, days };
 }
 
-/** Loads to propose for an exercise at the start of a session. */
-export function openingWeights(exercise: ExerciseTemplate, factor: number): number[] {
-  return Array.from({ length: exercise.sets }, (_, index) => {
-    const target =
-      exercise.targetWeights[index] ?? exercise.targetWeights.at(-1) ?? 0;
-    return factor === 1 ? clampLoad(target) : clampLoad(target * factor);
-  });
+/** Loads to propose for an exercise at the start of a session: the last ones. */
+export function openingWeights(exercise: ExerciseTemplate): number[] {
+  return Array.from({ length: exercise.sets }, (_, index) =>
+    clampLoad(exercise.targetWeights[index] ?? exercise.targetWeights.at(-1) ?? 0),
+  );
 }
 
 /**
@@ -214,6 +224,9 @@ export function applySessionToPrograms(programs: Program[], session: Session): P
  * The next program in the rotation, or null when the user has deleted them all.
  * Returning null rather than throwing keeps an empty library a normal state the
  * UI can render, not a crash.
+ *
+ * Salle et maison tournent chacune de leur côté : après une séance à la maison
+ * vient la séance maison suivante, jamais une séance de salle intercalée.
  */
 export function nextProgram(
   programs: Program[],
@@ -221,8 +234,9 @@ export function nextProgram(
 ): Program | null {
   const fallback = programs[0];
   if (!fallback) return null;
-  if (lastCompletedProgramId === null) return fallback;
-  const index = programs.findIndex((program) => program.id === lastCompletedProgramId);
-  if (index === -1) return fallback;
-  return programs[(index + 1) % programs.length] ?? fallback;
+  const last = programs.find((program) => program.id === lastCompletedProgramId);
+  if (!last) return fallback;
+  const cycle = programs.filter((program) => programPlace(program) === programPlace(last));
+  const index = cycle.indexOf(last);
+  return cycle[(index + 1) % cycle.length] ?? fallback;
 }

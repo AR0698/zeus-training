@@ -1,20 +1,23 @@
 import { useEffect, useRef, useState } from "react";
-import { circuitPosition, type CircuitPosition } from "../../domain/circuit.ts";
+import { circuitPosition, manualRestSeconds, type CircuitPosition } from "../../domain/circuit.ts";
+import { upNext } from "../../domain/place.ts";
 import {
   formatClock,
   formatDuration,
   formatLoad,
   formatRepRange,
-  unitLabel,
 } from "../../domain/format.ts";
-import { weightStep } from "../../domain/progression.ts";
 import { elapsedSeconds, lastExerciseNote, sessionProgress } from "../../domain/session.ts";
-import type { Effort, HistoryEntry, Session, SessionExercise, SetEntry, Settings } from "../../domain/types.ts";
+import type { Effort, HistoryEntry, Session, SessionExercise, Settings } from "../../domain/types.ts";
 import { useBottomChrome } from "../../hooks/useBottomChrome.ts";
 import { ExerciseNoteField, ExerciseNoteRecall } from "../components/ExerciseNoteField.tsx";
+import { ExerciseFigure } from "../components/ExerciseFigure.tsx";
+import { FlashcardSet } from "../components/FlashcardSet.tsx";
+import { RestPanel } from "../components/RestPanel.tsx";
 import { RestTimerBar } from "../components/RestTimer.tsx";
+import { SetRow } from "../components/SetRow.tsx";
+import { figureFor } from "../figures.ts";
 import { Sheet } from "../components/Sheet.tsx";
-import { Stepper } from "../components/Stepper.tsx";
 import {
   IconCheck,
   IconChevronRight,
@@ -23,7 +26,6 @@ import {
   IconSkip,
   IconSwap,
   IconTimer,
-  IconTrophy,
 } from "../icons.tsx";
 import type { ExerciseDetail } from "../types.ts";
 import { detailFromSession } from "../types.ts";
@@ -98,6 +100,9 @@ export function SessionScreen({
 
   if (!current) return null;
   const allDone = progress.doneSets === progress.totalSets;
+  // À la maison, la séance se fait en cartes et le repos prend tout l'écran.
+  const cards = session.place === "home";
+  const next = upNext(session);
 
   return (
     <main className={`session accent-${session.accent}`}>
@@ -154,17 +159,30 @@ export function SessionScreen({
       </header>
 
       <div className="session-body">
-        <ExerciseCard
-          ref={cardRef}
-          entry={current}
-          index={session.currentIndex}
-          total={session.exercises.length}
-          circuit={circuitPosition(session, session.currentIndex)}
-          previousNote={lastExerciseNote(history, current.exerciseId)}
-          now={now}
-          settings={settings}
-          handlers={handlers}
-        />
+        {cards && rest.remaining !== null ? (
+          <RestPanel
+            remaining={rest.remaining}
+            total={rest.total}
+            position={circuitPosition(session, session.currentIndex)}
+            nextName={current.replacedBy ?? current.name}
+            onAdd={rest.add}
+            onStop={rest.stop}
+          />
+        ) : (
+          <ExerciseCard
+            ref={cardRef}
+            entry={current}
+            index={session.currentIndex}
+            total={session.exercises.length}
+            circuit={circuitPosition(session, session.currentIndex)}
+            cards={cards}
+            restSeconds={manualRestSeconds(session, session.currentIndex, settings.defaultRestSeconds)}
+            next={next ? (next.replacedBy ?? next.name) : null}
+            previousNote={lastExerciseNote(history, current.exerciseId)}
+            now={now}
+            handlers={handlers}
+          />
+        )}
 
         {session.exercises.some((entry) => entry.status === "pending" && entry !== current) && (
           <section className="up-next">
@@ -211,7 +229,7 @@ export function SessionScreen({
       </div>
 
       <footer className="session-footer" ref={footerRef}>
-        {rest.remaining !== null && (
+        {rest.remaining !== null && !cards && (
           <RestTimerBar
             remaining={rest.remaining}
             total={rest.total}
@@ -285,9 +303,11 @@ function ExerciseCard({
   index,
   total,
   circuit,
+  cards,
+  restSeconds,
+  next,
   previousNote,
   now,
-  settings,
   handlers,
 }: {
   ref: React.Ref<HTMLElement>;
@@ -296,19 +316,25 @@ function ExerciseCard({
   total: number;
   /** Position dans les tours, ou `null` pour un exercice en séries classiques. */
   circuit: CircuitPosition | null;
+  /** Séance à la maison : une carte par série au lieu du tableau. */
+  cards: boolean;
+  /** Repos du bouton « Repos » : celui d'entre les tours en circuit. */
+  restSeconds: number;
+  /** L'exercice qui suivra, pour le « Ensuite : … » de la carte. */
+  next: string | null;
   previousNote: { note: string; date: number } | null;
   now: number;
-  settings: Settings;
   handlers: SessionHandlers;
 }) {
   const allSetsDone = entry.sets.every((set) => set.done);
   const timed = entry.unit === "sec";
   // Poids du corps : pas de colonne de charge, seules les répétitions comptent.
   const bodyweight = entry.unit === "reps";
-  const restSeconds = entry.restSeconds > 0 ? entry.restSeconds : settings.defaultRestSeconds;
-  // En circuit, une seule série à la fois : la première qui reste à faire.
+  // En cartes, une seule série à la fois : la première qui reste à faire. Un
+  // exercice déjà fini retrouve son tableau, pour pouvoir annuler une série.
   const nextSetIndex = entry.sets.findIndex((set) => !set.done);
-  const flashcard = circuit !== null && nextSetIndex !== -1;
+  const flashcard = (cards || circuit !== null) && nextSetIndex !== -1;
+  const figure = flashcard ? figureFor(detailFromSession(entry).figureId) : null;
   const tableClass = `set-table ${timed ? "is-timed" : ""} ${bodyweight ? "is-bodyweight" : ""}`;
 
   return (
@@ -320,9 +346,7 @@ function ExerciseCard({
       <header className="exercise-card-head">
         <div>
           <span className="kicker">
-            {circuit
-              ? `Tour ${circuit.round}/${circuit.rounds} · exercice ${circuit.step}/${circuit.steps}`
-              : `Exercice ${index + 1}/${total}`}
+            {kicker(circuit, flashcard ? nextSetIndex : null, entry.sets.length, index, total)}
           </span>
           <h2 id={`exercise-${entry.exerciseId}`}>{entry.replacedBy ?? entry.name}</h2>
           {entry.replacedBy && <span className="swap-note">remplace {entry.name}</span>}
@@ -345,13 +369,16 @@ function ExerciseCard({
         </button>
       </header>
 
+      {figure && <ExerciseFigure figure={figure} name={entry.name} />}
+
       {flashcard ? (
-        <CircuitSet
+        <FlashcardSet
+          key={`${entry.exerciseId}-${nextSetIndex}`}
           entry={entry}
           setIndex={nextSetIndex}
           className={tableClass}
-          timed={timed}
-          bodyweight={bodyweight}
+          next={next}
+          now={now}
           handlers={handlers}
         />
       ) : (
@@ -464,118 +491,17 @@ function ExerciseCard({
 }
 
 /**
- * Une ligne de série : son numéro, la charge (ou la durée) et les reps.
- * La validation est passée en `children` : une coche dans le tableau, rien
- * dans la carte du circuit qui a son propre gros bouton.
+ * L'en-tête de la carte : le tour en circuit, la série en cartes, sinon la
+ * place de l'exercice dans la séance.
  */
-function SetRow({
-  entry,
-  set,
-  setIndex,
-  timed,
-  bodyweight,
-  handlers,
-  children,
-}: {
-  entry: SessionExercise;
-  set: SetEntry;
-  setIndex: number;
-  timed: boolean;
-  bodyweight: boolean;
-  handlers: SessionHandlers;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className={`set-row ${set.done ? "is-done" : ""}`}>
-      <span className="set-index tabular">
-        {setIndex + 1}
-        {set.pr && (
-          // Toutes les icônes sont `aria-hidden`, et un `title` ne se
-          // montre pas au doigt : sans ce mot, le record n'existe que
-          // pour qui voit la coupe.
-          <span className="pr-flag">
-            <IconTrophy size={11} />
-            <span className="visually-hidden">Record personnel</span>
-          </span>
-        )}
-      </span>
-
-      {!bodyweight && (
-        <div className="set-cell set-cell-weight">
-          <span className="set-cell-label">{timed ? "Durée" : "Charge"}</span>
-          <Stepper
-            value={set.weight}
-            unit={unitLabel(entry.unit)}
-            step={weightStep(entry.unit, entry.group, set.weight)}
-            label={`Série ${setIndex + 1} ${timed ? "durée" : "charge"}`}
-            onAdjust={(delta) => handlers.adjust(entry.exerciseId, setIndex, "weight", delta)}
-            onSet={(value) => handlers.setValue(entry.exerciseId, setIndex, "weight", value)}
-          />
-        </div>
-      )}
-
-      {!timed && (
-        <div className="set-cell set-cell-reps">
-          <span className="set-cell-label">Reps</span>
-          <Stepper
-            value={set.reps}
-            unit=""
-            step={1}
-            label={`Série ${setIndex + 1} répétitions`}
-            onAdjust={(delta) => handlers.adjust(entry.exerciseId, setIndex, "reps", delta)}
-            onSet={(value) => handlers.setValue(entry.exerciseId, setIndex, "reps", value)}
-          />
-        </div>
-      )}
-
-      {children}
-    </div>
-  );
-}
-
-/**
- * La carte du circuit : une seule série, celle du tour en cours, et un gros
- * « Fait » qui enchaîne sur l'exercice suivant. Pas de « + série » : le nombre
- * de tours appartient au programme.
- */
-function CircuitSet({
-  entry,
-  setIndex,
-  className,
-  timed,
-  bodyweight,
-  handlers,
-}: {
-  entry: SessionExercise;
-  setIndex: number;
-  className: string;
-  timed: boolean;
-  bodyweight: boolean;
-  handlers: SessionHandlers;
-}) {
-  const set = entry.sets[setIndex];
-  if (!set) return null;
-  return (
-    <div className={`${className} circuit-set`} role="group" aria-label="Série du tour">
-      <SetRow
-        entry={entry}
-        set={set}
-        setIndex={setIndex}
-        timed={timed}
-        bodyweight={bodyweight}
-        handlers={handlers}
-      />
-      <span className="set-range">
-        Cible {formatRepRange(entry.repMin, entry.repMax)} {timed ? "s" : "reps"}
-      </span>
-      <button
-        type="button"
-        className="button button-accent button-lg circuit-done"
-        onClick={() => handlers.toggleSet(entry, setIndex)}
-      >
-        <IconCheck size={22} />
-        Fait
-      </button>
-    </div>
-  );
+function kicker(
+  circuit: CircuitPosition | null,
+  cardSetIndex: number | null,
+  setCount: number,
+  index: number,
+  total: number,
+): string {
+  if (circuit) return `Tour ${circuit.round}/${circuit.rounds} · exercice ${circuit.step}/${circuit.steps}`;
+  if (cardSetIndex !== null) return `Série ${cardSetIndex + 1}/${setCount} · exercice ${index + 1}/${total}`;
+  return `Exercice ${index + 1}/${total}`;
 }

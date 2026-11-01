@@ -62,8 +62,8 @@ export function TodayScreen({
         <div className="banner banner-warn" role="status">
           <IconAlert size={18} />
           <p>
-            <strong>Reprise après {restDays} jours.</strong> Les charges de cette séance sont
-            proposées 10&nbsp;% en dessous de tes cibles, le temps de retrouver la technique.
+            <strong>Reprise après {restDays} jours.</strong> Les charges proposées sont celles de ta
+            dernière séance : allège-les si besoin, le temps de retrouver la technique.
           </p>
         </div>
       )}

@@ -1,38 +1,37 @@
-import { circuitSummary } from "../../domain/circuit.ts";
-import { formatMinutes, formatNumber, formatRepRange, unitLabel } from "../../domain/format.ts";
-import type { PackId } from "../../domain/packs.ts";
-import type { AppState, Program } from "../../domain/types.ts";
-import { PackSection } from "../components/PackSection.tsx";
-import { IconArrowRight, IconPencil, IconPlus } from "../icons.tsx";
-import { detailFromTemplate, type ExerciseDetail } from "../types.ts";
+import { programsAt } from "../../domain/place.ts";
+import type { AppState, Place, Program } from "../../domain/types.ts";
+import { ProgramCard } from "../components/ProgramCard.tsx";
+import { IconPlus } from "../icons.tsx";
+import type { ExerciseDetail } from "../types.ts";
 
+/** L'onglet Salle : les séances faites en tableau de séries, dans l'ordre de la rotation. */
 export function ProgramsScreen({
   state,
   onStart,
   onEdit,
   onCreate,
-  onAddPack,
   onOpenDetail,
 }: {
   state: AppState;
   onStart: (program: Program) => void;
   onEdit: (programId: string) => void;
-  onCreate: () => void;
-  onAddPack: (packId: PackId) => void;
+  onCreate: (place: Place) => void;
   onOpenDetail: (detail: ExerciseDetail) => void;
 }) {
+  const programs = programsAt(state.programs, "gym");
+
   return (
     <>
       <header className="screen-head">
-        <span className="eyebrow">Programmes</span>
+        <span className="eyebrow">Salle</span>
         <h1 className="display">Ton cycle, à ta façon</h1>
         <p className="lead">
           Les séances tournent en boucle dans l&apos;ordre de cette liste. Ajoute, retire et
-          réordonne les exercices ; les cibles se recalculent seules après chaque séance.
+          réordonne les exercices ; chaque séance repart des charges de la précédente.
         </p>
       </header>
 
-      {state.programs.length === 0 ? (
+      {programs.length === 0 ? (
         <div className="card empty-state">
           <IconPlus size={26} />
           <h2>Aucune séance pour l&apos;instant</h2>
@@ -40,76 +39,25 @@ export function ProgramsScreen({
             Crée ta première séance : nomme-la, ajoute des exercices depuis le catalogue, et elle
             apparaîtra sur l&apos;accueil.
           </p>
-          <button type="button" className="button button-accent" onClick={onCreate}>
+          <button type="button" className="button button-accent" onClick={() => onCreate("gym")}>
             <IconPlus size={18} />
             Créer une séance
           </button>
         </div>
       ) : (
         <div className="program-list">
-          {state.programs.map((program, index) => (
-            <article key={program.id} className={`card program-card accent-${program.accent}`}>
-              <span className="program-card-bar" aria-hidden="true" />
-              <div className="program-card-head">
-                <span className="program-order tabular">{String(index + 1).padStart(2, "0")}</span>
-                <div>
-                  <h2>{program.name}</h2>
-                  <p className="muted">
-                    {program.focus ? `${program.focus} · ` : ""}
-                    {formatMinutes(program.estimatedMinutes)}
-                  </p>
-                  {circuitSummary(program) && (
-                    <p className="program-circuit tabular">{circuitSummary(program)}</p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  className="icon-button"
-                  onClick={() => onEdit(program.id)}
-                  aria-label={`Modifier ${program.name}`}
-                >
-                  <IconPencil size={17} />
-                </button>
-              </div>
-
-              {program.exercises.length === 0 ? (
-                <p className="program-empty">
-                  Séance vide — ouvre-la pour ajouter des exercices.
-                </p>
-              ) : (
-                <ul className="program-exercises">
-                  {program.exercises.map((exercise) => (
-                    <li key={exercise.id}>
-                      <button type="button" onClick={() => onOpenDetail(detailFromTemplate(exercise))}>
-                        <span className="program-exercise-name">{exercise.shortName}</span>
-                        <span className="program-exercise-reps tabular">
-                          {exercise.sets}×{formatRepRange(exercise.repMin, exercise.repMax)}
-                        </span>
-                        {exercise.unit !== "reps" && (
-                          <strong className="program-exercise-load tabular">
-                            {exercise.targetWeights.map(formatNumber).join(" · ")}{" "}
-                            {unitLabel(exercise.unit)}
-                          </strong>
-                        )}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              <button
-                type="button"
-                className="button button-solid"
-                onClick={() => onStart(program)}
-                disabled={program.exercises.length === 0}
-              >
-                Démarrer maintenant
-                <IconArrowRight size={18} />
-              </button>
-            </article>
+          {programs.map((program, index) => (
+            <ProgramCard
+              key={program.id}
+              program={program}
+              index={index}
+              onStart={onStart}
+              onEdit={onEdit}
+              onOpenDetail={onOpenDetail}
+            />
           ))}
 
-          <button type="button" className="card program-add" onClick={onCreate}>
+          <button type="button" className="card program-add" onClick={() => onCreate("gym")}>
             <IconPlus size={22} />
             <strong>Nouvelle séance</strong>
             <small>Repartir d&apos;une page blanche ou dupliquer une séance existante</small>
@@ -117,7 +65,6 @@ export function ProgramsScreen({
         </div>
       )}
 
-      <PackSection state={state} onAdd={onAddPack} />
     </>
   );
 }

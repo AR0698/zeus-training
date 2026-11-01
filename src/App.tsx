@@ -6,8 +6,8 @@ import {
   slugify,
   uniqueExerciseId,
 } from "./domain/library.ts";
+import { chosenHomePack, type PackId } from "./domain/packs.ts";
 import { markOnboarded, type StarterChoice } from "./domain/onboarding.ts";
-import type { PackId } from "./domain/packs.ts";
 import { decideProgression } from "./domain/progression.ts";
 import { shouldPromptBackup } from "./domain/reminder.ts";
 import { isSessionStale } from "./domain/session.ts";
@@ -15,10 +15,12 @@ import type {
   AppState,
   Effort,
   ExerciseTemplate,
+  Place,
   Program,
   SessionExercise,
 } from "./domain/types.ts";
 import { downloadBackup } from "./storage/backup.ts";
+import { useAppUpdate } from "./hooks/useAppUpdate.ts";
 import { useHaptics } from "./hooks/useHaptics.ts";
 import { useNow } from "./hooks/useNow.ts";
 import { useRestTimer } from "./hooks/useRestTimer.ts";
@@ -34,9 +36,11 @@ import { Toaster, useToaster, type ToastTone } from "./ui/components/Toast.tsx";
 import { preloadFigures } from "./ui/figures.ts";
 import {
   IconAlert,
+  IconDownload,
   IconDumbbell,
   IconHome,
   IconSettings,
+  IconTarget,
   IconTrend,
   IconWifiOff,
 } from "./ui/icons.tsx";
@@ -44,6 +48,7 @@ import {
   ProgramEditorScreen,
   type ProgramEditorHandlers,
 } from "./ui/screens/ProgramEditorScreen.tsx";
+import { HomeScreen } from "./ui/screens/HomeScreen.tsx";
 import { ProgramsScreen } from "./ui/screens/ProgramsScreen.tsx";
 import { ProgressScreen } from "./ui/screens/ProgressScreen.tsx";
 import { SessionScreen, type SessionHandlers } from "./ui/screens/SessionScreen.tsx";
@@ -52,11 +57,12 @@ import { TodayScreen } from "./ui/screens/TodayScreen.tsx";
 import { WelcomeScreen } from "./ui/screens/WelcomeScreen.tsx";
 import { newId, type ExerciseDetail } from "./ui/types.ts";
 
-type Tab = "today" | "programs" | "progress" | "settings";
+type Tab = "today" | "programs" | "home" | "progress" | "settings";
 
 const TABS: { id: Tab; label: string; icon: (props: { size?: number }) => React.ReactElement }[] = [
-  { id: "today", label: "Aujourd'hui", icon: IconHome },
-  { id: "programs", label: "Programmes", icon: IconDumbbell },
+  { id: "today", label: "Aujourd'hui", icon: IconTarget },
+  { id: "programs", label: "Salle", icon: IconDumbbell },
+  { id: "home", label: "Maison", icon: IconHome },
   { id: "progress", label: "Progrès", icon: IconTrend },
   { id: "settings", label: "Réglages", icon: IconSettings },
 ];
@@ -68,6 +74,8 @@ export function App() {
   const [replaceTarget, setReplaceTarget] = useState<SessionExercise | null>(null);
   const [editProgramId, setEditProgramId] = useState<string | null>(null);
   const [staleDismissed, setStaleDismissed] = useState(false);
+  // Le programme maison choisi pendant cette visite ; sinon on le déduit.
+  const [homePack, setHomePack] = useState<PackId | null>(null);
   // A running session can be put aside to consult the programs or the history;
   // it keeps running and a bar offers the way back.
   const [sessionHidden, setSessionHidden] = useState(false);
@@ -78,6 +86,7 @@ export function App() {
   // One clock for the whole app: to the second during a session, to the minute
   // otherwise. No screen ever calls Date.now() while rendering.
   const now = useNow(true, state.session === null ? 60_000 : 1000);
+  const update = useAppUpdate();
 
   useTheme(state.settings.theme);
   useWakeLock(state.settings.keepAwake && state.session !== null);
@@ -276,6 +285,7 @@ export function App() {
 
     return {
       update: (patch) => dispatch({ type: "program/update", programId: program.id, patch }),
+      setCircuit: (circuit) => dispatch({ type: "program/setCircuit", programId: program.id, circuit }),
       moveProgram: (direction) =>
         dispatch({ type: "program/move", programId: program.id, direction }),
       duplicate: () => {
@@ -322,16 +332,11 @@ export function App() {
     };
   }
 
-  function createProgram() {
+  function createProgram(place: Place) {
     const id = newId("program");
-    dispatch({ type: "program/create", id });
+    dispatch({ type: "program/create", id, place });
     setEditProgramId(id);
-    setTab("programs");
-  }
-
-  function addPack(packId: PackId) {
-    dispatch({ type: "program/addPack", packId });
-    show({ message: "Séances ajoutées à ta liste", tone: "success" });
+    setTab(place === "home" ? "home" : "programs");
   }
 
   const staleSession =
@@ -445,6 +450,19 @@ export function App() {
           </div>
         )}
 
+        {/* Jamais en pleine séance : la proposition attend sur les autres écrans. */}
+        {update.ready && (
+          <div className="banner banner-accent banner-update" role="status">
+            <IconDownload size={18} />
+            <p>
+              <strong>Nouvelle version disponible.</strong> Tes séances sont enregistrées.
+            </p>
+            <button type="button" className="button button-accent" onClick={update.reload}>
+              Mettre à jour
+            </button>
+          </div>
+        )}
+
         {issues.length > 0 && (
           <div className="banner banner-warn" role="status">
             <IconAlert size={18} />
@@ -486,7 +504,20 @@ export function App() {
             onStart={startSession}
             onEdit={setEditProgramId}
             onCreate={createProgram}
-            onAddPack={addPack}
+            onOpenDetail={setDetail}
+          />
+        )}
+        {!editedProgram && tab === "home" && (
+          <HomeScreen
+            state={state}
+            onStart={startSession}
+            onEdit={setEditProgramId}
+            onCreate={createProgram}
+            picked={homePack ?? chosenHomePack(state)}
+            onChoosePack={(packId) => {
+              setHomePack(packId);
+              dispatch({ type: "program/addPack", packId });
+            }}
             onOpenDetail={setDetail}
           />
         )}

@@ -29,7 +29,7 @@ test("a new session mirrors the program targets", () => {
   assert.equal(first.sets.every((set) => !set.done), true);
 });
 
-test("a session started after a long break opens 10 % lighter", () => {
+test("après une longue pause, la séance repart des charges de la dernière fois", () => {
   const { session, layoff } = createSession({
     program: PROGRAM,
     now: NOW,
@@ -37,8 +37,7 @@ test("a session started after a long break opens 10 % lighter", () => {
     lastSessionDate: NOW - 30 * 86_400_000,
   });
   assert.equal(layoff.applied, true);
-  const target = PROGRAM.exercises[0]!.targetWeights[0]!;
-  assert.equal(session.exercises[0]!.sets[0]!.weight, Math.round(target * 0.9 * 2) / 2);
+  assert.equal(session.exercises[0]!.sets[0]!.weight, PROGRAM.exercises[0]!.targetWeights[0]!);
 });
 
 test("progress counts sets, not just exercises", () => {

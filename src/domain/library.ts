@@ -1,6 +1,6 @@
 import { EXERCISE_CATALOG, type CatalogEntry, type Equipment } from "./catalog/index.ts";
 import { normalise } from "./text.ts";
-import type { ExerciseTemplate, MuscleGroup, Program } from "./types.ts";
+import type { ExerciseTemplate, MuscleGroup, Place, Program } from "./types.ts";
 
 /**
  * Recherche dans le catalogue et fabriques utilisées par l'éditeur.
@@ -118,7 +118,7 @@ export function makeCustomExercise(id: string): ExerciseTemplate {
   };
 }
 
-export function makeEmptyProgram(id: string, accent: Program["accent"]): Program {
+export function makeEmptyProgram(id: string, accent: Program["accent"], place: Place = "gym"): Program {
   return {
     id,
     name: "Nouvelle séance",
@@ -127,6 +127,7 @@ export function makeEmptyProgram(id: string, accent: Program["accent"]): Program
     warmup: "",
     estimatedMinutes: 45,
     exercises: [],
+    ...(place === "home" ? { place } : {}),
   };
 }
 

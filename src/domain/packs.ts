@@ -5,14 +5,16 @@ import type { AppState, ExerciseTemplate, Program } from "./types.ts";
 /**
  * Les programmes « poids du corps » : de quoi quitter la salle sans perdre le fil.
  *
- * Deux paquets, qui s'ajoutent depuis l'écran Programmes :
+ * Deux programmes, au choix dans l'onglet Maison :
  *
- * - **Transition** — aucun matériel, pour tenir en attendant d'avoir une barre
- *   de traction et des élastiques, et pour quelqu'un qui n'enchaîne pas encore
- *   plusieurs séries de pompes : les pompes partent d'un appui surélevé.
- * - **Principal** — barre de porte + élastiques (une cinquantaine d'euros), avec
- *   le tirage doublé, des ischios, du travail sur une jambe et plus de poussée
- *   que de dips sur chaise.
+ * - **Sport hôtel** (`bodyweight-transition`) — zéro accessoire : une chambre,
+ *   une chaise, une table. Les pompes partent d'un appui surélevé, pour qui
+ *   n'enchaîne pas encore plusieurs séries.
+ * - **Sport maison** (`bodyweight`) — barre de porte + élastiques (une
+ *   cinquantaine d'euros), avec le tirage doublé, des ischios, du travail sur
+ *   une jambe et plus de poussée que de dips sur chaise.
+ *
+ * Les identifiants gardent leurs anciens noms : ils sont dans les sauvegardes.
  *
  * Même règle que les séances d'exemple : tout vient du catalogue, rien n'est
  * dupliqué. Les fiches sont clonées, donc modifier un programme ajouté ne touche
@@ -90,13 +92,11 @@ function exercises(items: PackExercise[]): ExerciseTemplate[] {
 }
 
 /**
- * Transition : aucune barre, aucun banc, aucun lest. Le catalogue décrit ces
- * deux mouvements avec une barre ou un banc ; ici le support est le mur, une
- * table ou une chaise, et la démonstration montre la table.
+ * Sport hôtel : le sol et un mur, rien d'autre — ni table, ni chaise, ni
+ * serviette. Le tirage sans barre passe par le dos au sol (superman, bird dog),
+ * et les pompes partent du mur pour qui n'en enchaîne pas encore.
  */
-const TABLE_ROW_VIDEO = "https://www.youtube.com/watch?v=5i7zfFO9RH4";
-const TABLE_ROW_CUE = "Allongé sous une table solide, mains sur le bord, corps gainé : tire la poitrine vers la table.";
-const INCLINED_CUE = "Mains sur le mur, une table ou une chaise, corps gainé des talons à la tête : plus le support est haut, plus c'est facile.";
+const WALL_PUSH_UP_CUE = "Mains sur le mur, corps gainé des talons à la tête : plus les pieds sont près du mur, plus c'est facile.";
 
 /** La vidéo de gainage de fin de séance, en deux exercices chronométrés. */
 const CORE_FINISH: PackExercise[] = [
@@ -106,57 +106,47 @@ const CORE_FINISH: PackExercise[] = [
 
 const TRANSITION: Pack = {
   id: "bodyweight-transition",
-  name: "Transition sans matériel",
+  name: "Sport hôtel",
   summary:
-    "Quatre séances de 30 minutes avec ce qu'il y a à la maison, en attendant la barre et les élastiques. Les pompes partent d'un appui surélevé.",
-  equipment: "Une table solide, une chaise, une serviette",
+    "Zéro accessoire : quatre séances de 30 minutes dans une chambre, avec le sol et un mur. Les pompes partent du mur.",
+  equipment: "Rien : le sol et un mur",
   programs: [
     {
       id: "bw-transition-1",
-      name: "Transition · Haut du corps",
-      focus: "Pompes inclinées · Rowing",
+      name: "Haut du corps",
+      focus: "Pompes · Dos au sol",
       accent: "acid",
       warmup: "4 min : cercles de poignets, rotations d'épaules, 10 scapula push-ups, quelques pompes au mur",
       estimatedMinutes: 30,
       circuit: { size: 5, restSeconds: CIRCUIT_REST_SHORT },
+      place: "home",
       exercises: exercises([
         {
           id: "incline-push-up",
           repMin: 8,
           repMax: 12,
-          cue: INCLINED_CUE,
-          tip: "Mains sur le mur, une table ou une chaise : choisis la hauteur qui te donne 8 à 12 pompes propres. À 3×12, descends d'un cran.",
+          cue: WALL_PUSH_UP_CUE,
+          tip: "Recule les pieds pour durcir. À 3×12 propres, passe aux pompes au sol sur les genoux.",
         },
-        {
-          id: "inverted-row",
-          repMin: 8,
-          repMax: 12,
-          cue: TABLE_ROW_CUE,
-          videoUrl: TABLE_ROW_VIDEO,
-          tip: "Sous une table lourde et stable qui ne glisse pas. Plus tu écartes les pieds, plus c'est facile.",
-        },
-        {
-          id: "diamond-push-up",
-          repMin: 6,
-          repMax: 10,
-          tip: "Mains sur un support surélevé au début : la même règle de hauteur que pour les pompes.",
-        },
+        { id: "superman", repMin: 20, repMax: 30, tip: "Bras et jambes décollés, regard vers le sol : c'est le tirage de la séance." },
+        { id: "diamond-push-up", repMin: 6, repMax: 10, tip: "Genoux au sol au début : la même règle que pour les pompes." },
         { id: "pike-hold", repMin: 15, repMax: 20 },
-        { id: "towel-row", repMin: 8, repMax: 12 },
+        { id: "bird-dog", repMin: 8, repMax: 10, tip: "Les reps se comptent par côté. Pause de 2 secondes bras et jambe tendus." },
       ]),
     },
     {
       id: "bw-transition-2",
-      name: "Transition · Jambes",
+      name: "Jambes",
       focus: "Quadriceps · Ischios · Fessiers",
       accent: "orange",
       warmup: "4 min : squats lents, rotations de hanches, fentes dynamiques",
       estimatedMinutes: 30,
       circuit: { size: 5, restSeconds: CIRCUIT_REST_LONG },
+      place: "home",
       exercises: exercises([
         { id: "bodyweight-squat", repMin: 12, repMax: 15, tip: "Descente en 3 secondes, 1 seconde de pause en bas." },
-        { id: "bodyweight-bulgarian-split-squat", repMin: 6, repMax: 10 },
-        { id: "slider-leg-curl", repMin: 6, repMax: 10 },
+        { id: "bodyweight-lunge", repMin: 8, repMax: 10, tip: "Les reps se comptent par jambe. Pour durcir : descente plus lente." },
+        { id: "single-leg-glute-bridge", repMin: 8, repMax: 12, tip: "Les reps se comptent par jambe : ce sont les ischios et les fessiers de la séance." },
         { id: "glute-bridge", repMin: 15, repMax: 15 },
         {
           id: "single-leg-calf-raise",
@@ -170,45 +160,33 @@ const TRANSITION: Pack = {
     },
     {
       id: "bw-transition-3",
-      name: "Transition · Dos et abdos",
-      focus: "Rowing · Gainage",
+      name: "Dos et abdos",
+      focus: "Dos au sol · Gainage",
       accent: "sky",
       warmup: "4 min : dead bug, cat-cow, rotations du buste",
       estimatedMinutes: 30,
       circuit: { size: 5, restSeconds: CIRCUIT_REST_SHORT },
+      place: "home",
       exercises: exercises([
-        {
-          id: "inverted-row",
-          repMin: 8,
-          repMax: 12,
-          cue: TABLE_ROW_CUE,
-          videoUrl: TABLE_ROW_VIDEO,
-          tip: "Sous une table lourde et stable. Pieds rapprochés pour durcir.",
-        },
         { id: "superman", repMin: 20, repMax: 30 },
         { id: "dead-bug", repMin: 8, repMax: 10, tip: "Les reps se comptent par côté. Bas du dos plaqué au sol." },
         { id: "hollow-hold", repMin: 15, repMax: 25 },
         { id: "bird-dog", repMin: 8, repMax: 10, tip: "Les reps se comptent par côté. Pause de 2 secondes bras et jambe tendus." },
+        { id: "reverse-crunch", sets: 3, repMin: 12, repMax: 15, tip: "Le bassin s'enroule, les jambes ne font pas d'élan." },
       ]),
     },
     {
       id: "bw-transition-4",
-      name: "Transition · Full body",
-      focus: "Pousser · Tirer · Jambes",
+      name: "Full body",
+      focus: "Pousser · Dos au sol · Jambes",
       accent: "violet",
       warmup: "4 min : marche rapide, montées de genoux, squats, pompes au mur",
       estimatedMinutes: 30,
       circuit: { size: 5, restSeconds: CIRCUIT_REST_LONG },
+      place: "home",
       exercises: exercises([
-        { id: "incline-push-up", repMin: 8, repMax: 12, cue: INCLINED_CUE },
-        {
-          id: "inverted-row",
-          repMin: 8,
-          repMax: 12,
-          cue: TABLE_ROW_CUE,
-          videoUrl: TABLE_ROW_VIDEO,
-          tip: "Sous une table lourde et stable qui ne glisse pas.",
-        },
+        { id: "incline-push-up", repMin: 8, repMax: 12, cue: WALL_PUSH_UP_CUE },
+        { id: "superman", repMin: 20, repMax: 30 },
         {
           id: "bodyweight-squat",
           repMin: 12,
@@ -230,19 +208,20 @@ const TRANSITION: Pack = {
 
 const MAIN: Pack = {
   id: "bodyweight",
-  name: "Poids du corps — barre et élastiques",
+  name: "Sport maison",
   summary:
-    "Quatre séances de 30 minutes avec une barre de traction de porte et des élastiques. Plus de 18 séries de tirage par semaine, avec ischios et travail sur une jambe.",
+    "Avec accessoires : quatre séances de 30 minutes avec une barre de traction de porte et des élastiques. Plus de 18 séries de tirage par semaine, avec ischios et travail sur une jambe.",
   equipment: "Barre de traction de porte, élastiques, sac à dos",
   programs: [
     {
       id: "bw-main-1",
-      name: "Poids du corps · Haut du corps",
+      name: "Haut du corps",
       focus: "Poussée · Tirage",
       accent: "acid",
       warmup: "4 min : cercles de poignets, 10 scapula push-ups, rotations d'épaules, 5 pompes faciles",
       estimatedMinutes: 30,
       circuit: { size: 5, restSeconds: CIRCUIT_REST_SHORT },
+      place: "home",
       exercises: exercises([
         { id: "band-assisted-pull-up", repMin: 5, repMax: 8 },
         { id: "push-up", repMin: 8, repMax: 15, tip: "Descente en 3 secondes. Au-delà de 15 propres, passe aux pompes déclinées." },
@@ -254,12 +233,13 @@ const MAIN: Pack = {
     },
     {
       id: "bw-main-2",
-      name: "Poids du corps · Jambes",
+      name: "Jambes",
       focus: "Unilatéral · Ischios · Fessiers",
       accent: "orange",
       warmup: "4 min : squats lents, rotations de hanches, fentes dynamiques",
       estimatedMinutes: 30,
       circuit: { size: 5, restSeconds: CIRCUIT_REST_LONG },
+      place: "home",
       exercises: exercises([
         { id: "bodyweight-bulgarian-split-squat", repMin: 8, repMax: 12 },
         { id: "slider-leg-curl", repMin: 8, repMax: 12 },
@@ -277,12 +257,13 @@ const MAIN: Pack = {
     },
     {
       id: "bw-main-3",
-      name: "Poids du corps · Dos et abdos",
+      name: "Dos et abdos",
       focus: "Tractions · Rowing · Gainage",
       accent: "sky",
       warmup: "4 min : dead bug, cat-cow, rotations du buste, scapula pulls",
       estimatedMinutes: 30,
       circuit: { size: 5, restSeconds: CIRCUIT_REST_SHORT },
+      place: "home",
       exercises: exercises([
         { id: "band-assisted-pull-up", repMin: 5, repMax: 8 },
         { id: "inverted-row", repMin: 10, repMax: 15 },
@@ -294,12 +275,13 @@ const MAIN: Pack = {
     },
     {
       id: "bw-main-4",
-      name: "Poids du corps · Full body",
+      name: "Full body",
       focus: "Tractions · Pompes · Jambes",
       accent: "violet",
       warmup: "4 min : marche rapide, montées de genoux, squats, 5 pompes faciles",
       estimatedMinutes: 30,
       circuit: { size: 6, restSeconds: CIRCUIT_REST_LONG },
+      place: "home",
       exercises: exercises([
         {
           id: "chin-up",
@@ -324,6 +306,75 @@ const MAIN: Pack = {
 };
 
 export const PACKS: readonly Pack[] = [TRANSITION, MAIN];
+
+/** La séance vient-elle d'un paquet ? Sert à ranger à la maison ceux ajoutés avant les lieux. */
+export function isPackProgramId(id: string): boolean {
+  return packOf(id) !== null;
+}
+
+/** Les préfixes des noms de séance avant que les programmes ne s'appellent Sport hôtel et Sport maison. */
+const LEGACY_PREFIXES = ["Transition · ", "Poids du corps · "];
+
+/**
+ * Le nom d'une séance de paquet enregistrée avant le renommage : « Transition ·
+ * Jambes » devient « Jambes ». Seul l'ancien nom par défaut change ; un nom
+ * tapé par la personne est gardé tel quel.
+ */
+export function migratePackProgramName(programId: string, name: string): string {
+  const current = PACKS.flatMap((pack) => pack.programs).find((program) => program.id === programId);
+  if (!current) return name;
+  const legacy = LEGACY_PREFIXES.some((prefix) => name === `${prefix}${current.name}`);
+  return legacy ? current.name : name;
+}
+
+/** Ce que Sport hôtel demandait avant d'être vraiment sans accessoire : table, serviette, chaise. */
+const EQUIPPED_HOTEL_EXERCISES = new Set([
+  "inverted-row",
+  "towel-row",
+  "slider-leg-curl",
+  "bodyweight-bulgarian-split-squat",
+]);
+
+/**
+ * Une séance Sport hôtel enregistrée avant le retrait du matériel : chaque
+ * exercice à table, serviette ou chaise est remplacé par celui que le
+ * programme prévoit à la même place, ou par le premier qui manque s'il y est
+ * déjà. Le reste — charges, ajouts, ordre — est gardé tel quel.
+ */
+export function migrateHotelExercises(programId: string, exercises: ExerciseTemplate[]): ExerciseTemplate[] {
+  if (packOf(programId) !== "bodyweight-transition") return exercises;
+  const current = TRANSITION.programs.find((program) => program.id === programId);
+  if (!current) return exercises;
+  const kept = new Set(exercises.map((exercise) => exercise.id));
+  return exercises.flatMap((exercise, index) => {
+    if (!EQUIPPED_HOTEL_EXERCISES.has(exercise.id)) return [exercise];
+    // Celui prévu à la même place, sinon le premier du programme qui manque.
+    const planned = current.exercises[index];
+    const replacement =
+      planned && !kept.has(planned.id)
+        ? planned
+        : current.exercises.find((candidate) => !kept.has(candidate.id));
+    if (!replacement) return [];
+    kept.add(replacement.id);
+    return [structuredClone(replacement)];
+  });
+}
+
+/** Le programme maison d'où vient une séance, ou `null` pour une séance à soi. */
+export function packOf(programId: string): PackId | null {
+  return PACKS.find((pack) => pack.programs.some((program) => program.id === programId))?.id ?? null;
+}
+
+/**
+ * Le programme maison à montrer à l'ouverture : celui de la dernière séance
+ * faite s'il en vient, sinon le premier dont une séance est dans la
+ * bibliothèque. `null` tant qu'aucun ne l'est — l'onglet propose alors le choix.
+ */
+export function chosenHomePack(state: AppState): PackId | null {
+  const last = state.lastCompletedProgramId === null ? null : packOf(state.lastCompletedProgramId);
+  if (last !== null && hasPack(state, last)) return last;
+  return PACKS.find((pack) => hasPack(state, pack.id))?.id ?? null;
+}
 
 export function findPack(id: string): Pack | null {
   return PACKS.find((pack) => pack.id === id) ?? null;

@@ -107,9 +107,9 @@
   bottom: calc(var(--space-3) + var(--safe-bottom));
   transform: translateX(-50%);
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--space-1);
-  width: min(28rem, calc(100% - var(--space-6)));
+  width: min(30rem, calc(100% - var(--space-6)));
   padding: var(--space-1);
   border-radius: var(--radius-lg);
   border: 1px solid var(--line-strong);
@@ -801,6 +801,19 @@
 .set-table.circuit-set .set-cell-label { display: inline; }
 .set-table.circuit-set .set-range { text-align: center; }
 .circuit-done { width: 100%; min-height: 3.5rem; font-size: var(--text-lg); }
+.exercise-card.is-circuit .exercise-figure { margin-top: var(--space-3); }
+.exercise-card.is-circuit .figure-frames { aspect-ratio: 16 / 9; }
+.hold-clock { display: block; text-align: center; font-size: var(--text-4xl); font-weight: 700; padding: var(--space-3) 0; }
+.flashcard-next { text-align: center; font-size: var(--text-sm); color: var(--text-2); }
+
+/* Repos à la maison : plein écran à la place de la carte. */
+.rest-panel { display: grid; justify-items: center; gap: var(--space-3); text-align: center; padding-block: var(--space-6); }
+.rest-panel-clock { font-size: clamp(3.5rem, 18vw, 5rem); font-weight: 700; line-height: 1; }
+.rest-panel-progress { width: 80%; height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.rest-panel-progress span { display: block; height: 100%; background: var(--accent); transform-origin: left; transition: transform 1s linear; }
+.rest-panel-chips { display: flex; gap: var(--space-2); }
+.rest-panel-next { display: grid; gap: var(--space-1); font-size: var(--text-sm); color: var(--text-2); }
+.rest-panel-next strong { font-size: var(--text-lg); color: var(--text); }
 
 /* Le libellé et le pas-à-pas tiennent sur une ligne tant que le second garde
    ses 132 px — deux cibles de 44 px plus la valeur. En dessous (un 320 px, ou

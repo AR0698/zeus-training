@@ -52,6 +52,12 @@ export type ExerciseTemplate = {
  */
 export type Circuit = { size: number; restSeconds: number };
 
+/**
+ * Où se fait une séance. La salle garde son tableau de séries ; la maison se
+ * fait carte par carte, une série à la fois. Absent : la salle.
+ */
+export type Place = "gym" | "home";
+
 export type Program = {
   id: string;
   name: string;
@@ -63,6 +69,8 @@ export type Program = {
   exercises: ExerciseTemplate[];
   /** Absent : la séance se fait exercice par exercice. */
   circuit?: Circuit;
+  /** Absent : la salle. */
+  place?: Place;
 };
 
 export type SetEntry = {
@@ -106,6 +114,8 @@ export type Session = {
   exercises: SessionExercise[];
   /** Copie du circuit du programme au démarrage, bornée à la séance. */
   circuit?: Circuit;
+  /** Présent seulement pour une séance à la maison, faite en cartes. */
+  place?: "home";
 };
 
 /** A per-exercise note kept with the session that produced it. */

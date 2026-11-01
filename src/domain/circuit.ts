@@ -11,6 +11,15 @@ import type { Circuit, Program, Session, SessionExercise } from "./types.ts";
 /** En dessous de deux exercices, enchaîner n'a pas de sens. */
 const MIN_CIRCUIT_SIZE = 2;
 
+/** Repos proposé quand on active les tours dans l'éditeur, et son pas de réglage. */
+export const CIRCUIT_REST = { initial: 60, step: 15, min: 15 } as const;
+
+/** Les tailles de circuit qu'on peut choisir pour une séance : de 2 à tous ses exercices. */
+export function circuitSizeOptions(exerciseCount: number): number[] {
+  const count = Math.max(0, exerciseCount - MIN_CIRCUIT_SIZE + 1);
+  return Array.from({ length: count }, (_, index) => index + MIN_CIRCUIT_SIZE);
+}
+
 /**
  * Le circuit tel qu'il s'applique à une liste de `exerciseCount` exercices :
  * borné à leur nombre, ou `null` quand il n'en reste pas assez pour tourner.
@@ -123,7 +132,7 @@ function circuitRest(
 }
 
 /** La séance telle qu'elle sera une fois la série validée, statut compris. */
-function withSetDone(session: Session, index: number, setIndex: number): Session {
+export function withSetDone(session: Session, index: number, setIndex: number): Session {
   return {
     ...session,
     exercises: session.exercises.map((entry, position) => {
@@ -132,6 +141,18 @@ function withSetDone(session: Session, index: number, setIndex: number): Session
       return { ...entry, sets, status: sets.every((set) => set.done) ? "done" : entry.status };
     }),
   };
+}
+
+/**
+ * Le repos que propose le bouton « Repos » de la carte : celui d'entre les
+ * tours en circuit, celui de l'exercice sinon, et le réglage par défaut quand
+ * l'exercice n'en a pas.
+ */
+export function manualRestSeconds(session: Session, index: number, defaultRestSeconds: number): number {
+  const circuit = fitCircuit(session.circuit, session.exercises.length);
+  if (circuit && index < circuit.size && circuit.restSeconds > 0) return circuit.restSeconds;
+  const own = session.exercises[index]?.restSeconds ?? 0;
+  return own > 0 ? own : defaultRestSeconds;
 }
 
 /** « 3 tours · repos 60 s » pour la carte du programme, ou `null` sans circuit. */

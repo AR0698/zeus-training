@@ -141,9 +141,13 @@ test("chaque mouvement des paquets a une démonstration à regarder", () => {
   }
 });
 
-test("la transition n'emploie aucun accessoire, ni dans ses fiches ni dans ses consignes", () => {
-  // Seuls de quoi trouver à la maison : un mur, une table, une chaise, une serviette, une marche.
-  const interdits = /barre|banc|élastique|elastique|haltère|halter|sangle|anneau|trx|lest|sac à dos|bouteille|kettlebell|poulie|machine/i;
+test("Sport hôtel n'emploie aucun accessoire, ni dans ses fiches ni dans ses consignes", () => {
+  // Le sol et un mur, rien d'autre : ni table, ni chaise, ni serviette.
+  const interdits = /barre|banc|élastique|elastique|haltère|halter|sangle|anneau|trx|lest|sac à dos|bouteille|kettlebell|poulie|machine|\btable|chaise|serviette|glisse|slider|canapé/i;
+  const ids = packPrograms("bodyweight-transition").flatMap((program) => program.exercises.map((e) => e.id));
+  for (const forbidden of ["inverted-row", "towel-row", "slider-leg-curl", "bodyweight-bulgarian-split-squat"]) {
+    assert.ok(!ids.includes(forbidden), `${forbidden} demande une table, une serviette ou une chaise`);
+  }
   for (const program of packPrograms("bodyweight-transition")) {
     assert.doesNotMatch(program.warmup, interdits, `${program.id} : échauffement`);
     for (const exercise of program.exercises) {

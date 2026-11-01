@@ -28,7 +28,7 @@ export function createSession({ program, now, id, lastSessionDate }: SessionSeed
   session: Session;
   layoff: { applied: boolean; days: number };
 } {
-  const { applied, days, factor } = layoffAdjustment(lastSessionDate, now);
+  const { applied, days } = layoffAdjustment(lastSessionDate, now);
 
   const exercises: SessionExercise[] = program.exercises.map((exercise) => ({
     exerciseId: exercise.id,
@@ -47,7 +47,7 @@ export function createSession({ program, now, id, lastSessionDate }: SessionSeed
     status: "pending",
     replacedBy: null,
     note: "",
-    sets: openingWeights(exercise, factor).map((weight) => ({
+    sets: openingWeights(exercise).map((weight) => ({
       weight,
       reps: openingReps(exercise.unit, exercise.repMin),
       done: false,
@@ -66,6 +66,7 @@ export function createSession({ program, now, id, lastSessionDate }: SessionSeed
       currentIndex: 0,
       exercises,
       ...(circuit ? { circuit } : {}),
+      ...(program.place === "home" ? { place: "home" as const } : {}),
     },
     layoff: { applied, days },
   };
@@ -190,7 +191,7 @@ export function finishSession(
     completedSets: progress.doneSets,
     volume: sessionVolume(session),
     note: complete
-      ? "Séance complète — cibles recalculées."
+      ? "Séance complète — charges gardées pour la prochaine fois."
       : `${missing} exercice${missing > 1 ? "s" : ""} à reprendre la prochaine fois.`,
     exerciseNotes: collectNotes(session),
     personalRecords,
