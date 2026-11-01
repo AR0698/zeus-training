@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { catalogTemplate } from "../src/domain/catalog/index.ts";
+import { catalogEntry, catalogTemplate } from "../src/domain/catalog/index.ts";
 import { addPack, hasPack, PACKS, packPrograms } from "../src/domain/packs.ts";
 import { createInitialState, examplePrograms } from "../src/domain/seed.ts";
 import { createSession } from "../src/domain/session.ts";
@@ -137,6 +137,20 @@ test("chaque mouvement des paquets a une démonstration à regarder", () => {
       for (const exercise of program.exercises) {
         assert.ok(exercise.videoUrl.startsWith("https://"), `${exercise.id} n'a pas de démonstration`);
       }
+    }
+  }
+});
+
+test("la transition n'emploie aucun accessoire, ni dans ses fiches ni dans ses consignes", () => {
+  // Seuls de quoi trouver à la maison : un mur, une table, une chaise, une serviette, une marche.
+  const interdits = /barre|banc|élastique|elastique|haltère|halter|sangle|anneau|trx|lest|sac à dos|bouteille|kettlebell|poulie|machine/i;
+  for (const program of packPrograms("bodyweight-transition")) {
+    assert.doesNotMatch(program.warmup, interdits, `${program.id} : échauffement`);
+    for (const exercise of program.exercises) {
+      const where = `${program.id}/${exercise.id}`;
+      assert.equal(catalogEntry(exercise.id)?.equipment, "poids-du-corps", `${where} : matériel du catalogue`);
+      assert.doesNotMatch(exercise.cue, interdits, `${where} : consigne`);
+      assert.doesNotMatch(exercise.tip, interdits, `${where} : conseil`);
     }
   }
 });
