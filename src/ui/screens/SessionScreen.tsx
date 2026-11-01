@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { circuitPosition, manualRestSeconds, type CircuitPosition } from "../../domain/circuit.ts";
+import {
+  circuitGrid,
+  circuitPosition,
+  manualRestSeconds,
+  restAfterValidation,
+  type CircuitPosition,
+} from "../../domain/circuit.ts";
 import { upNext } from "../../domain/place.ts";
 import {
   formatClock,
@@ -15,6 +21,7 @@ import { ExerciseFigure } from "../components/ExerciseFigure.tsx";
 import { FlashcardSet } from "../components/FlashcardSet.tsx";
 import { RestPanel } from "../components/RestPanel.tsx";
 import { RestTimerBar } from "../components/RestTimer.tsx";
+import { RoundGrid } from "../components/RoundGrid.tsx";
 import { SetRow } from "../components/SetRow.tsx";
 import { figureFor } from "../figures.ts";
 import { Sheet } from "../components/Sheet.tsx";
@@ -102,7 +109,8 @@ export function SessionScreen({
   const allDone = progress.doneSets === progress.totalSets;
   // À la maison, la séance se fait en cartes et le repos prend tout l'écran.
   const cards = session.place === "home";
-  const next = upNext(session);
+  const grid = circuitGrid(session);
+  const nextLine = describeNext(session, settings);
 
   return (
     <main className={`session accent-${session.accent}`}>
@@ -159,6 +167,7 @@ export function SessionScreen({
       </header>
 
       <div className="session-body">
+        {grid && <RoundGrid grid={grid} />}
         {cards && rest.remaining !== null ? (
           <RestPanel
             remaining={rest.remaining}
@@ -177,7 +186,7 @@ export function SessionScreen({
             circuit={circuitPosition(session, session.currentIndex)}
             cards={cards}
             restSeconds={manualRestSeconds(session, session.currentIndex, settings.defaultRestSeconds)}
-            next={next ? (next.replacedBy ?? next.name) : null}
+            next={nextLine}
             previousNote={lastExerciseNote(history, current.exerciseId)}
             now={now}
             handlers={handlers}
@@ -501,7 +510,23 @@ function kicker(
   index: number,
   total: number,
 ): string {
-  if (circuit) return `Tour ${circuit.round}/${circuit.rounds} · exercice ${circuit.step}/${circuit.steps}`;
+  // Le tour se lit dans la grille au-dessus : la carte dit la place dans le tour.
+  if (circuit) return `Exercice ${circuit.step} sur ${circuit.steps}`;
   if (cardSetIndex !== null) return `Série ${cardSetIndex + 1}/${setCount} · exercice ${index + 1}/${total}`;
   return `Exercice ${index + 1}/${total}`;
+}
+
+/**
+ * « Ensuite : … » sous le bouton « Fait ». En circuit, il dit aussi s'il y a
+ * une pause : « sans pause » dans le tour, le repos en fin de tour.
+ */
+function describeNext(session: Session, settings: Settings): string | null {
+  const next = upNext(session);
+  if (!next) return null;
+  const name = next.replacedBy ?? next.name;
+  const current = session.exercises[session.currentIndex];
+  const setIndex = current?.sets.findIndex((set) => !set.done) ?? -1;
+  if (!current || setIndex === -1 || circuitPosition(session, session.currentIndex) === null) return name;
+  const rest = restAfterValidation(session, current.exerciseId, setIndex, settings);
+  return rest.kind === "start" ? `repos ${formatDuration(rest.seconds)}, puis ${name}` : `${name}, sans pause`;
 }

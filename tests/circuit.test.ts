@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { circuitPosition, circuitSizeOptions, circuitSummary, restAfterValidation } from "../src/domain/circuit.ts";
+import { circuitGrid, circuitPosition, circuitSizeOptions, circuitSummary, restAfterValidation } from "../src/domain/circuit.ts";
 import { packPrograms } from "../src/domain/packs.ts";
 import { SEED_PROGRAMS, createInitialState } from "../src/domain/seed.ts";
 import { createSession } from "../src/domain/session.ts";
@@ -221,4 +221,33 @@ test("l'éditeur propose de 2 exercices à tous ceux de la séance", () => {
   assert.deepEqual(circuitSizeOptions(5), [2, 3, 4, 5]);
   assert.deepEqual(circuitSizeOptions(1), []);
   assert.deepEqual(circuitSizeOptions(0), []);
+});
+
+test("la grille des tours : une ligne par tour, une case par exercice", () => {
+  let state = start(CIRCUIT_PROGRAM);
+  for (let step = 0; step < 7; step += 1) state = validateCurrent(state);
+  const grid = circuitGrid(state.session!)!;
+  assert.equal(grid.round, 2);
+  assert.equal(grid.rounds, 3);
+  assert.deepEqual(grid.rows, [
+    ["done", "done", "done", "done", "done"],
+    ["done", "done", "current", "todo", "todo"],
+    ["todo", "todo", "todo", "todo", "todo"],
+  ]);
+});
+
+test("un exercice passé est barré sur toutes ses cases restantes", () => {
+  let state = start(CIRCUIT_PROGRAM);
+  state = validateCurrent(state);
+  state = reducer(state, { type: "session/skip", exerciseId: state.session!.exercises[1]!.exerciseId });
+  const grid = circuitGrid(state.session!)!;
+  assert.deepEqual(grid.rows.map((row) => row[1]), ["skipped", "skipped", "skipped"]);
+  assert.equal(grid.rows[0]![0], "done");
+});
+
+test("pas de grille hors circuit, ni une fois le circuit fini", () => {
+  assert.equal(circuitGrid(start(SEED_PROGRAMS[0]!).session!), null);
+  let state = start(CIRCUIT_PROGRAM);
+  for (let step = 0; step < 15; step += 1) state = validateCurrent(state);
+  assert.equal(circuitGrid(state.session!), null);
 });
