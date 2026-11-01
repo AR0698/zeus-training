@@ -7,7 +7,7 @@ Ce document explique **pourquoi** le code est découpé ainsi. Chaque règle ci-
 ## 1. Le principe directeur : une seule direction de dépendance
 
 ```
-domain/catalog/  ← données : les 123 mouvements, seule source de vérité
+domain/catalog/  ← données : les 135 mouvements, seule source de vérité
    ↑
 domain/          ← fonctions pures : progression, recherche, rappels, calculs
    ↑
@@ -114,7 +114,7 @@ C'est une correction directe de la version précédente, qui affichait « 3 séa
 
 ## 9. Le catalogue est une donnée, pas du code dispersé
 
-`domain/catalog/` contient les 123 mouvements, découpés par muscle (`chest`, `back`, `shoulders`, `arms`, `legs`, `core`) et construits par une seule fabrique, `entry()`. Les séances d'exemple de `domain/seed.ts` **n'écrivent aucun exercice** : elles citent des identifiants et reçoivent une copie de la fiche. Un test échoue si l'un de ces identifiants disparaît du catalogue.
+`domain/catalog/` contient les 135 mouvements, découpés par muscle (`chest`, `back`, `shoulders`, `arms`, `legs`, `core`) plus `bodyweight` pour les variantes sans salle et construits par une seule fabrique, `entry()`. Les séances d'exemple de `domain/seed.ts` **n'écrivent aucun exercice** : elles citent des identifiants et reçoivent une copie de la fiche. Un test échoue si l'un de ces identifiants disparaît du catalogue. Les paquets « poids du corps » de `domain/packs.ts` fonctionnent de la même façon et s'ajoutent à la liste par l'action `program/addPack`, idempotente.
 
 Deux champs n'existent que dans le catalogue et ne sont jamais persistés : `equipment` et `haystack`. Les mettre dans `ExerciseTemplate` aurait imposé une migration de schéma pour une donnée que personne ne modifie, et aurait figé dans les sauvegardes un index de recherche qui doit pouvoir changer à chaque version.
 

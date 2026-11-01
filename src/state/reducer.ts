@@ -1,5 +1,6 @@
 import { ACCENTS, SESSION_MINUTES, makeEmptyProgram, patchExercise } from "../domain/library.ts";
 import { completeOnboarding } from "../domain/onboarding.ts";
+import { addPack } from "../domain/packs.ts";
 import { clampLoad, applySessionToPrograms, openingReps, weightStep } from "../domain/progression.ts";
 import { cleanReplacementName, keptSessionEntry, keptTemplate } from "../domain/replacement.ts";
 import { NOTE_MAX_LENGTH, createSession, beatsRecord, finishSession } from "../domain/session.ts";
@@ -142,6 +143,9 @@ export function reducer(state: AppState, action: Action): AppState {
       const accent = ACCENTS[state.programs.length % ACCENTS.length] ?? "acid";
       return { ...state, programs: [...state.programs, makeEmptyProgram(action.id, accent)] };
     }
+
+    case "program/addPack":
+      return addPack(state, action.packId);
 
     case "program/duplicate": {
       const source = state.programs.find((program) => program.id === action.programId);

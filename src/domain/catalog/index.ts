@@ -2,6 +2,7 @@ import { normalise } from "../text.ts";
 import type { ExerciseTemplate } from "../types.ts";
 import { ARMS } from "./arms.ts";
 import { BACK } from "./back.ts";
+import { BODYWEIGHT } from "./bodyweight.ts";
 import { CHEST } from "./chest.ts";
 import { CORE } from "./core.ts";
 import type { CatalogEntry } from "./entry.ts";
@@ -23,7 +24,7 @@ export type { Illustration } from "./illustrations.ts";
 export const EXERCISE_CATALOG: CatalogEntry[] = (() => {
   const seen = new Set<string>();
   const all: CatalogEntry[] = [];
-  for (const item of [...CHEST, ...BACK, ...SHOULDERS, ...ARMS, ...LEGS, ...CORE]) {
+  for (const item of [...CHEST, ...BACK, ...SHOULDERS, ...ARMS, ...LEGS, ...CORE, ...BODYWEIGHT]) {
     if (seen.has(item.template.id)) continue;
     seen.add(item.template.id);
     all.push(item);

@@ -1,5 +1,7 @@
 import { formatMinutes, formatNumber, formatRepRange, unitLabel } from "../../domain/format.ts";
+import type { PackId } from "../../domain/packs.ts";
 import type { AppState, Program } from "../../domain/types.ts";
+import { PackSection } from "../components/PackSection.tsx";
 import { IconArrowRight, IconPencil, IconPlus } from "../icons.tsx";
 import { detailFromTemplate, type ExerciseDetail } from "../types.ts";
 
@@ -8,12 +10,14 @@ export function ProgramsScreen({
   onStart,
   onEdit,
   onCreate,
+  onAddPack,
   onOpenDetail,
 }: {
   state: AppState;
   onStart: (program: Program) => void;
   onEdit: (programId: string) => void;
   onCreate: () => void;
+  onAddPack: (packId: PackId) => void;
   onOpenDetail: (detail: ExerciseDetail) => void;
 }) {
   return (
@@ -106,6 +110,8 @@ export function ProgramsScreen({
           </button>
         </div>
       )}
+
+      <PackSection state={state} onAdd={onAddPack} />
     </>
   );
 }

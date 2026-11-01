@@ -1,5 +1,5 @@
 import type { StarterChoice } from "../../domain/onboarding.ts";
-import { IconArrowRight, IconCopy, IconDumbbell, IconUpload } from "../icons.tsx";
+import { IconArrowRight, IconCopy, IconDumbbell, IconHome, IconUpload } from "../icons.tsx";
 
 /**
  * Le dernier écran de l'accueil : à qui sont les séances.
@@ -63,6 +63,20 @@ export function WelcomeStarter({
             <small>
               Un cycle haut / bas du corps prêt à démarrer, entièrement modifiable ensuite. Les
               charges proposées sont volontairement basses.
+            </small>
+          </span>
+          <IconArrowRight size={18} />
+        </button>
+
+        <button type="button" className="welcome-choice" onClick={() => onChoose("bodyweight")}>
+          <span className="welcome-choice-icon">
+            <IconHome size={20} />
+          </span>
+          <span>
+            <strong>Partir du poids du corps</strong>
+            <small>
+              Quatre séances de 30 minutes sans salle ni matériel. Le programme avec barre et
+              élastiques s&apos;ajoute plus tard depuis l&apos;écran Programmes.
             </small>
           </span>
           <IconArrowRight size={18} />

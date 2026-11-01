@@ -1,4 +1,5 @@
 import type { OnboardingChoice } from "../domain/onboarding.ts";
+import type { PackId } from "../domain/packs.ts";
 import type { AppState, Effort, ExerciseTemplate, Program, Settings } from "../domain/types.ts";
 
 /**
@@ -17,6 +18,8 @@ export type Action =
   | { type: "program/setTarget"; programId: string; exerciseId: string; setIndex: number; value: number }
   | { type: "program/adjustTarget"; programId: string; exerciseId: string; setIndex: number; delta: number }
   | { type: "program/create"; id: string }
+  /** Ajoute les séances d'un paquet (poids du corps) à la suite des siennes. */
+  | { type: "program/addPack"; packId: PackId }
   | { type: "program/duplicate"; programId: string; id: string }
   | { type: "program/delete"; programId: string }
   | { type: "program/move"; programId: string; direction: -1 | 1 }
