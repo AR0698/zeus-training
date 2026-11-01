@@ -129,3 +129,14 @@ test("une séance de paquet démarre, se valide et survit à un aller-retour dis
   assert.deepEqual(parsed.issues, []);
   assert.equal(parsed.state.programs.length, 4);
 });
+
+test("chaque mouvement des paquets a une démonstration à regarder", () => {
+  // Le but des paquets : quelqu'un qui n'a jamais fait le geste doit pouvoir le voir.
+  for (const pack of PACKS) {
+    for (const program of pack.programs) {
+      for (const exercise of program.exercises) {
+        assert.ok(exercise.videoUrl.startsWith("https://"), `${exercise.id} n'a pas de démonstration`);
+      }
+    }
+  }
+});

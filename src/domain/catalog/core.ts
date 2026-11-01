@@ -134,6 +134,7 @@ export const CORE: CatalogEntry[] = [
     restSeconds: 60,
     cue: "Bassin rétroversé, montée sans balancement.",
     tip: "Genoux fléchis d'abord ; jambes tendues quand le contrôle est acquis.",
+    videoUrl: "https://www.youtube.com/watch?v=bnWwYmguF3k",
     alternatives: ["Relevés de genoux", "Crunch inversé", "Relevés de jambes au sol"],
     tags: ["abdos", "bas des abdos", "barre fixe", "grip"],
   }),
