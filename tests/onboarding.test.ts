@@ -45,6 +45,19 @@ test("choisir les exemples charge une copie modifiable", () => {
   assert.equal(SEED_PROGRAMS[0]?.name, "Haut du corps A", "la source reste intacte");
 });
 
+test("choisir le poids du corps charge la transition sans matériel", () => {
+  const state = completeOnboarding(createInitialState(NOW), {
+    now: NOW,
+    starter: "bodyweight",
+    displayName: "",
+  });
+  assert.deepEqual(
+    state.programs.map((program) => program.id),
+    ["bw-transition-1", "bw-transition-2", "bw-transition-3", "bw-transition-4"],
+  );
+  assert.equal(state.onboardedAt, NOW);
+});
+
 test("l'accueil ne se repose pas au rechargement", () => {
   const state = reducer(createInitialState(NOW), {
     type: "onboarding/finish",

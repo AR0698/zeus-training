@@ -1,3 +1,4 @@
+import { packPrograms } from "./packs.ts";
 import { examplePrograms } from "./seed.ts";
 import type { AppState } from "./types.ts";
 
@@ -13,13 +14,19 @@ import type { AppState } from "./types.ts";
  * l'application n'est atteignable avant.
  */
 
-export type StarterChoice = "blank" | "examples";
+export type StarterChoice = "blank" | "examples" | "bodyweight";
 
 export type OnboardingChoice = {
   now: number;
   starter: StarterChoice;
   displayName: string;
 };
+
+function starterPrograms(starter: StarterChoice, state: AppState): AppState["programs"] {
+  if (starter === "examples") return examplePrograms();
+  if (starter === "bodyweight") return packPrograms("bodyweight-transition");
+  return state.programs;
+}
 
 export function isOnboarded(state: AppState): boolean {
   return state.onboardedAt !== null;
@@ -30,8 +37,10 @@ export function completeOnboarding(state: AppState, choice: OnboardingChoice): A
     ...state,
     onboardedAt: choice.now,
     // « Repartir de zéro » ne doit pas effacer un programme déjà commencé :
-    // seul le choix des exemples ajoute quelque chose.
-    programs: choice.starter === "examples" ? examplePrograms() : state.programs,
+    // seuls les choix d'exemples ajoutent quelque chose. Le poids du corps
+    // charge la transition, qui ne demande aucun matériel ; le programme
+    // principal s'ajoute ensuite depuis l'écran Programmes.
+    programs: starterPrograms(choice.starter, state),
     settings: { ...state.settings, displayName: choice.displayName.trim().slice(0, 40) },
   };
 }

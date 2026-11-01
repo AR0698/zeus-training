@@ -8,7 +8,7 @@ Application web statique, installable sur l'écran d'accueil, **sans compte, san
 
 ## Ce que fait l'application
 
-Chaque installation part **vide** : au premier lancement, on choisit de composer ses propres séances, de partir de quatre séances d'exemple, ou d'importer une sauvegarde. Personne n'hérite du programme de quelqu'un d'autre, et rien n'est figé — tout le contenu se modifie depuis l'app, sans toucher au code.
+Chaque installation part **vide** : au premier lancement, on choisit de composer ses propres séances, de partir de quatre séances d'exemple, du poids du corps sans matériel, ou d'importer une sauvegarde. Personne n'hérite du programme de quelqu'un d'autre, et rien n'est figé — tout le contenu se modifie depuis l'app, sans toucher au code.
 
 - **Premier lancement** — le choix de départ, le prénom, et l'explication de ce que « local » implique vraiment : aucune copie ailleurs, aucune récupération possible sans sauvegarde.
 - **Aujourd'hui** — la prochaine séance du cycle, calculée depuis l'historique, démarrable en un geste.
