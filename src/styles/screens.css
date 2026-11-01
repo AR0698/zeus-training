@@ -806,6 +806,19 @@
 .hold-clock { display: block; text-align: center; font-size: var(--text-4xl); font-weight: 700; padding: var(--space-3) 0; }
 .flashcard-next { text-align: center; font-size: var(--text-sm); color: var(--text-2); }
 
+/* Grille des tours : une ligne par tour, une case par exercice. */
+.round-grid { display: grid; gap: var(--space-2); margin-bottom: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); }
+.round-grid-title { font-size: var(--text-lg); font-weight: 700; }
+.round-grid-title span { color: var(--text-2); font-weight: 600; }
+.round-grid-rows { display: grid; gap: 6px; }
+.round-grid-row { display: flex; gap: 6px; align-items: center; }
+.round-grid-label { flex: 0 0 1.75rem; font-size: var(--text-3xs); font-weight: 700; color: var(--text-3); }
+.round-grid-row.is-current .round-grid-label { color: var(--accent-text); }
+.round-grid-cell { flex: 1 1 0; height: 0.875rem; border-radius: 4px; border: 1px solid var(--line-strong); }
+.round-grid-cell.is-done { background: var(--accent); border-color: var(--accent); }
+.round-grid-cell.is-current { border: 2px solid var(--accent-text); background: var(--accent-soft); }
+.round-grid-cell.is-skipped { border-style: dashed; opacity: 0.5; }
+
 /* Repos à la maison : plein écran à la place de la carte. */
 .rest-panel { display: grid; justify-items: center; gap: var(--space-3); text-align: center; padding-block: var(--space-6); }
 .rest-panel-clock { font-size: clamp(3.5rem, 18vw, 5rem); font-weight: 700; line-height: 1; }

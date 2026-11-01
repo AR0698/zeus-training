@@ -76,6 +76,44 @@ export function circuitPosition(session: Session, index: number): CircuitPositio
   };
 }
 
+export type GridCell = "done" | "current" | "todo" | "skipped";
+
+export type CircuitGrid = {
+  /** Le tour en cours, à partir de 1. */
+  round: number;
+  rounds: number;
+  /** Une ligne par tour, une case par exercice du circuit. */
+  rows: GridCell[][];
+};
+
+/**
+ * La grille des tours affichée pendant la séance : on voit d'un coup d'œil
+ * qu'on tourne, où l'on en est et ce qui reste. `null` hors circuit, et une
+ * fois le circuit fini — la suite se fait en séries classiques.
+ */
+export function circuitGrid(session: Session): CircuitGrid | null {
+  const size = circuitSize(session);
+  if (!isInCircuit(session, session.currentIndex)) return null;
+  const zone = session.exercises.slice(0, size);
+  if (!zone.some(hasSetToDo)) return null;
+
+  const rounds = Math.max(...zone.map((entry) => entry.sets.length));
+  const doneCounts = zone.map((entry) => entry.sets.filter((set) => set.done).length);
+  const active = zone.flatMap((entry, index) => (entry.status === "skipped" ? [] : [doneCounts[index] ?? 0]));
+  const round = Math.min(rounds, 1 + Math.min(...active, rounds - 1));
+
+  const rows = Array.from({ length: rounds }, (_, row) =>
+    zone.map((entry, column): GridCell => {
+      const done = doneCounts[column] ?? 0;
+      if (row < done) return "done";
+      if (entry.status === "skipped" || row >= entry.sets.length) return "skipped";
+      if (column === session.currentIndex && row === done) return "current";
+      return "todo";
+    }),
+  );
+  return { round, rounds, rows };
+}
+
 export type RestDecision =
   /** Lancer le minuteur pour autant de secondes. */
   | { kind: "start"; seconds: number }
